@@ -1,4 +1,4 @@
-from FoodieApp.app_context import get_app
+from BearDownBots.app_context import get_app
 
 
 class Robot:

@@ -51,5 +51,6 @@ Ensure all tests pass before submitting a pull request.
 ## Contributing
 
 1. Remember to add all necessary python libraries to the pyproject.toml
+2. If you change the pyproject.toml, remember to run ```bash pip install .``` afterwards or your changes won't take effect
 
 

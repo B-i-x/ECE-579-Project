@@ -1,7 +1,7 @@
 """
 Simple singleton pattern to store and retrieve the main Tk application instance.
 """
-from FoodieApp.main import FoodieApp
+from BearDownBots.main import FoodieApp
 
 _app = None
 

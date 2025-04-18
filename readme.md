@@ -8,34 +8,32 @@
 ## Project Description
 Provide a brief description of the project here.
 
+
 ## How to Run
-1. Clone the repository:
-    ```bash
-    git clone https://github.com/your-repo-url.git
-    ```
+1. Clone the repository
+
 2. Navigate to the project directory:
     ```bash
     cd ECE-579-Project
     ```
-3. Install dependencies (if applicable):
+3. Install dependencies:
     ```bash
-    # Example for Python
-    pip install -r requirements.txt
+    pip install -e .
     ```
 4. Run the project:
     ```bash
-    # Replace with actual command
-    python main.py
+    run
     ```
 
 ## Repository Structure
 - `/src`: Source code
-- `/docs`: Documentation
 - `/tests`: Test cases
-- `/data`: Dataset files
+- `/assets`: Pictures and other assets
+
+## Contributing
+
+1. Remember to add all necessary python libraries to the pyproject.toml
+
 
 ## License
 Include license information here.
-
-## Contact
-For questions or issues, contact **[Your Email]**.

@@ -1,0 +1,28 @@
+[project]
+name = "bear-down-bots"
+version = "0.1.0"
+description = "A project for the Bear Down Bots."
+authors = [
+    {name = "Alex R", email = "aromerlozano@arizona.edu"}
+    ]
+license = "MIT"
+readme = "README.md"
+keywords = ["robotics", "automation", "ECE-579"]
+
+# runtime dependencies
+dependencies = [
+  "numpy>=1.24",
+  # tkinter is part of the standard library; on Debian/Ubuntu:
+  #   sudo apt install python3-tk
+]
+
+[build-system]
+# A list of packages that are needed to build your package:
+requires = ["setuptools"] # REQUIRED if [build-system] table is used
+build-backend = "setuptools.build_meta" # If not defined, then legacy behavior can happen.
+
+
+# console‐script entry point; adjust target if your main() lives in a different module
+[project.scripts]
+run = "BearDownBots:main"
+

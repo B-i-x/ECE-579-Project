@@ -6,8 +6,9 @@
 - **Alex Romero**
 
 ## Project Description
-Provide a brief description of the project here.
+BearDownBots is an AI-driven expert system that orchestrates a fleet of three constant‑speed robots to deliver meals for the Bear Express restaurant across a configurable university campus. The system procedurally generates a bounded map (using maze‑generation techniques to place obstacles) and simulates random food orders arriving every 10 minutes from diverse campus locations.
 
+Operating from a central food warehouse, each robot loads multiple orders and services several destinations before returning to resupply. Through adjustable parameters (e.g. map size, robot speed, buffer assumptions) and advanced path‑planning and scheduling algorithms, BearDownBots minimizes average delivery time per item while enabling concurrent, intelligent coordination across all robots.
 
 ## How to Run
 1. Clone the repository

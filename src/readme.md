@@ -4,7 +4,6 @@
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
 3. [Setup Instructions](#setup-instructions)
-4. [Development Workflow](#development-workflow)
 5. [Testing](#testing)
 6. [Contributing](#contributing)
 
@@ -12,12 +11,7 @@
 This document provides guidelines for developers contributing to the Python application. It includes setup instructions, project structure, and best practices.
 
 ## Project Structure
-```
-src/
-├── environment/           # Core application logic
-├── requirements.txt # Python dependencies
-└── main.py        # Entry point of the application
-```
+#TODO
 
 ## Setup Instructions
 1. Clone the repository:
@@ -46,16 +40,6 @@ src/
     pip install .
     ```
 
-## Development Workflow
-- Create a new branch for each feature or bug fix:
-  ```bash
-  git checkout -b feature/your-feature-name
-  ```
-- Commit changes with meaningful messages:
-  ```bash
-  git commit -m "Add feature description"
-  ```
-- Push changes and create a pull request.
 
 ## Testing (Not Implemented Yet)
 Run tests using:
@@ -65,8 +49,7 @@ pytest
 Ensure all tests pass before submitting a pull request.
 
 ## Contributing
-- Follow the [Code of Conduct](CODE_OF_CONDUCT.md).
-- Adhere to the project's coding standards.
-- Submit detailed pull requests with clear descriptions.
-- Write tests for new features or bug fixes.
-- Update documentation as needed.
+
+1. Remember to add all necessary python libraries to the pyproject.toml
+
+

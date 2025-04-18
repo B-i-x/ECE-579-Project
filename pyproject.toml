@@ -1,5 +1,5 @@
 [project]
-name = "the-bear-down-bots"
+name = "bear-down-bots"
 version = "0.1.0"
 description = "A project for the Bear Down Bots."
 authors = [
@@ -9,6 +9,19 @@ license = "MIT"
 readme = "README.md"
 keywords = ["robotics", "automation", "ECE-579"]
 
+# runtime dependencies
+dependencies = [
+  "numpy>=1.24",
+  # tkinter is part of the standard library; on Debian/Ubuntu:
+  #   sudo apt install python3-tk
+]
+
+# optional dependencies
 [build-system]
 requires = ["hatchling >= 1.26"]
 build-backend = "hatchling.build"
+
+
+# console‐script entry point; adjust target if your main() lives in a different module
+[project.scripts]
+bear-down-bots = "simulation:main"

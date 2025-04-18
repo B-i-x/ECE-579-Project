@@ -8,6 +8,8 @@
 ## Project Description
 Provide a brief description of the project here.
 
+Dev guide in src/
+
 ## How to Run
 1. Clone the repository:
     ```bash
@@ -20,7 +22,7 @@ Provide a brief description of the project here.
 3. Install dependencies (if applicable):
     ```bash
     # Example for Python
-    pip install -r requirements.txt
+    pip install .
     ```
 4. Run the project:
     ```bash
@@ -36,6 +38,3 @@ Provide a brief description of the project here.
 
 ## License
 Include license information here.
-
-## Contact
-For questions or issues, contact **[Your Email]**.

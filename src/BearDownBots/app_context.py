@@ -1,7 +1,7 @@
 """
 Simple singleton pattern to store and retrieve the main Tk application instance.
 """
-from BearDownBots.main import FoodieApp
+from BearDownBots.gui import BearDownBotsApp
 
 _app = None
 
@@ -10,7 +10,7 @@ def set_app(app):
     _app = app
 
 
-def get_app() -> FoodieApp:
+def get_app() -> BearDownBotsApp:
     """
     Retrieve the globally stored Tk root (FoodieApp) instance.
 

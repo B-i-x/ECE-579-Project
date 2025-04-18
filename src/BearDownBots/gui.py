@@ -1,6 +1,6 @@
 import tkinter as tk
 
-class FoodieApp(tk.Tk):
+class BearDownBotsApp(tk.Tk):
     """
     Minimal Tkinter application for the FOODIE simulation.
     """
@@ -10,6 +10,4 @@ class FoodieApp(tk.Tk):
         # Optional: set a default size
         self.geometry("400x300")
 
-if __name__ == "__main__":
-    app = FoodieApp()
-    app.mainloop()
+

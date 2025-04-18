@@ -1,4 +1,4 @@
-# main.py
+# __init__.py
 from BearDownBots.gui import BearDownBotsApp
 from BearDownBots.app_context import set_app
 
@@ -11,8 +11,6 @@ def main():
     # draw a campus of 20×30 cells of size 20px
     campus = Campus(rows=20, cols=30, cell_size=20)
 
-    # example: highlight one cell
-    campus.highlight_cell(5, 10, color="lightblue")
 
     app.mainloop()
 

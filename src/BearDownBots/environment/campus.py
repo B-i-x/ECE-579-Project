@@ -1,158 +1,103 @@
 import random
-from collections import deque
 from BearDownBots.app_context import get_app
 
 class Campus:
     """
-    Randomly generates a campus map with large building blocks and narrow walkways,
-    then draws it onto the global BearDownBotsApp.canvas. Ensures corridor connectivity.
+    Places roughly‐square buildings randomly on a grid, ensuring
+    at least a one‐cell walkway margin between them.
+    Everything not occupied by a building is considered walkway.
     """
     def __init__(
         self,
         rows: int,
         cols: int,
         cell_size: int = 20,
-        num_main_corridors: int = None
+        num_attempts: int = 500
     ):
         self.rows      = rows
         self.cols      = cols
         self.cell_size = cell_size
+        self._buffer   = 1  # one‐cell margin
 
-        # pick 1 or 2 main corridors if not specified
-        self.num_main_corridors = (
-            num_main_corridors
-            if num_main_corridors is not None
-            else random.choice([1, 2])
-        )
-
-        # grab the singleton app & its canvas
         app = get_app()
         if not hasattr(app, "canvas"):
             raise RuntimeError("BearDownBotsApp must have a .canvas")
         self.canvas = app.canvas
 
-        # initialize everything as building
-        self.grid = [["building"] * self.cols for _ in range(self.rows)]
-
-        # carve corridors & walkways
-        self._generate_layout()
-
-        # ensure connectivity
-        self._ensure_connectivity()
-
-        # draw the result
+        # try placing up to num_attempts buildings
+        self._place_buildings(num_attempts)
+        # build the cell grid from building footprints
+        self._fill_grid()
+        # draw the final map
         self._draw_map()
 
-    def _generate_layout(self):
-        # ─── Main corridors (thickness=1, partial length) ───
-        for _ in range(self.num_main_corridors):
-            ori = random.choice(["horizontal", "vertical"])
-            length = (random.randint(self.cols//3, self.cols//2)
-                      if ori=="horizontal" else
-                      random.randint(self.rows//3, self.rows//2))
-            if ori == "horizontal":
-                row = random.randint(self.rows//4, 3*self.rows//4)
-                start = random.randint(0, self.cols-length)
-                for c in range(start, start+length):
-                    self.grid[row][c] = "main_walkway"
-            else:
-                col = random.randint(self.cols//4, 3*self.cols//4)
-                start = random.randint(0, self.rows-length)
-                for r in range(start, start+length):
-                    self.grid[r][col] = "main_walkway"
+    def _place_buildings(self, num_attempts: int):
+        self.buildings = []  # list of (r0, c0, h, w)
+        for _ in range(num_attempts):
+            # pick a “base size” between 1/10 and 1/4 of the smaller dimension
+            base = random.randint(
+                min(self.rows, self.cols)//10,
+                max(2, min(self.rows, self.cols)//4)
+            )
+            # give it ±20% randomness
+            w = random.randint(int(base*0.8), int(base*1.2))
+            h = random.randint(int(base*0.8), int(base*1.2))
+            # clamp sizes so they actually fit
+            w = max(2, min(w, self.cols - 2))
+            h = max(2, min(h, self.rows - 2))
 
-        # ─── Secondary walkways (many short segments) ───
-        count = random.randint((self.rows+self.cols)//10,
-                               (self.rows+self.cols)//6)
-        for _ in range(count):
-            ori = random.choice(["horizontal", "vertical"])
-            seg_len = random.randint(2, min(6, self.cols if ori=="horizontal" else self.rows))
-            if ori == "horizontal":
-                row = random.randint(1, self.rows-2)
-                start = random.randint(0, self.cols-seg_len)
-                for c in range(start, start+seg_len):
-                    if self.grid[row][c] == "building":
-                        self.grid[row][c] = "walkway"
-            else:
-                col = random.randint(1, self.cols-2)
-                start = random.randint(0, self.rows-seg_len)
-                for r in range(start, start+seg_len):
-                    if self.grid[r][col] == "building":
-                        self.grid[r][col] = "walkway"
+            # pick a random top‐left that stays on the board
+            r0 = random.randint(0, self.rows - h)
+            c0 = random.randint(0, self.cols - w)
 
-    def _ensure_connectivity(self):
-        # find all walkway cells
-        walk_cells = {
-            (r, c)
-            for r in range(self.rows)
-            for c in range(self.cols)
-            if self.grid[r][c] in ("walkway", "main_walkway")
-        }
-        if not walk_cells:
-            return
+            # build the buffered rectangle (including 1‐cell margin)
+            br0 = max(0, r0 - self._buffer)
+            bc0 = max(0, c0 - self._buffer)
+            br1 = min(self.rows - 1, r0 + h - 1 + self._buffer)
+            bc1 = min(self.cols - 1, c0 + w - 1 + self._buffer)
 
-        # helper to get neighbors
-        def neighbors(cell):
-            r, c = cell
-            for dr, dc in ((1,0),(-1,0),(0,1),(0,-1)):
-                nr, nc = r+dr, c+dc
-                if 0 <= nr < self.rows and 0 <= nc < self.cols:
-                    yield (nr, nc)
+            # test against every existing building’s true footprint
+            conflict = False
+            for (or0, oc0, oh, ow) in self.buildings:
+                or1 = or0 + oh - 1
+                oc1 = oc0 + ow - 1
+                # do rectangles [br0..br1]×[bc0..bc1] vs [or0..or1]×[oc0..oc1] overlap?
+                if not (br1 < or0 or br0 > or1 or bc1 < oc0 or bc0 > oc1):
+                    conflict = True
+                    break
 
-        # find connected components
-        comps = []
-        seen = set()
-        for cell in walk_cells:
-            if cell in seen:
-                continue
-            # BFS for this component
-            q = deque([cell])
-            comp = {cell}
-            seen.add(cell)
-            while q:
-                cur = q.popleft()
-                for nb in neighbors(cur):
-                    if nb in walk_cells and nb not in seen:
-                        seen.add(nb)
-                        comp.add(nb)
-                        q.append(nb)
-            comps.append(comp)
+            if not conflict:
+                # accepts this building
+                self.buildings.append((r0, c0, h, w))
 
-        # if more than one component, connect them to comp[0]
-        main_comp = comps[0]
-        for other in comps[1:]:
-            # pick one cell from each
-            r0, c0 = next(iter(main_comp))
-            r1, c1 = next(iter(other))
-            # carve an L‑shaped corridor between (r1,c1)→(r0,c0)
-            # first horizontally, then vertically
-            for c in range(min(c0,c1), max(c0,c1)+1):
-                if self.grid[r1][c] == "building":
-                    self.grid[r1][c] = "walkway"
-            for r in range(min(r0,r1), max(r0,r1)+1):
-                if self.grid[r][c0] == "building":
-                    self.grid[r][c0] = "walkway"
-            # merge the other comp into main_comp
-            main_comp |= other
+    def _fill_grid(self):
+        # start with every cell = walkway
+        self.grid = [["walkway"] * self.cols for _ in range(self.rows)]
+        # paint in each building
+        for (r0, c0, h, w) in self.buildings:
+            for r in range(r0, r0 + h):
+                for c in range(c0, c0 + w):
+                    self.grid[r][c] = "building"
 
     def _draw_map(self):
         colors = {
-            "building":     "#D2B48C",  # tan
-            "walkway":      "#FFFFFF",  # white
-            "main_walkway": "#CCCCCC",  # light gray
+            "building": "#D2B48C",  # tan
+            "walkway":  "#FFFFFF",  # white
         }
-
         for r in range(self.rows):
             for c in range(self.cols):
                 fill = colors[self.grid[r][c]]
-                x1, y1 = c*self.cell_size, r*self.cell_size
-                x2, y2 = x1+self.cell_size, y1+self.cell_size
+                x1 = c * self.cell_size
+                y1 = r * self.cell_size
+                x2 = x1 + self.cell_size
+                y2 = y1 + self.cell_size
                 self.canvas.create_rectangle(
                     x1, y1, x2, y2,
                     fill=fill, outline="black", width=1
                 )
 
     def highlight_cell(self, r: int, c: int, color: str = "yellow"):
+        """Recolor a single cell after drawing."""
         x1 = c*self.cell_size + 1
         y1 = r*self.cell_size + 1
         x2 = x1 + self.cell_size - 2

@@ -3,101 +3,205 @@ from BearDownBots.app_context import get_app
 
 class Campus:
     """
-    Places roughly‐square buildings randomly on a grid, ensuring
-    at least a one‐cell walkway margin between them.
-    Everything not occupied by a building is considered walkway.
+    Places varied‐shaped buildings in one pass:
+      • rectangle          (random W×H)
+      • ratio_rectangle    (aspect ≈1:2)
+      • square             (solid)
+      • hollow_square      (shell)
+      • trapezoid          (linear interpolation between top/bottom widths)
+
+    You can control the relative probabilities of each shape by passing
+    a `shape_probabilities` dict, e.g.:
+
+        shape_probabilities = {
+          "rectangle":       0.4,
+          "ratio_rectangle": 0.2,
+          "square":          0.2,
+          "hollow_square":   0.1,
+          "trapezoid":       0.1,
+        }
     """
     def __init__(
         self,
         rows: int,
         cols: int,
-        cell_size: int = 20,
-        num_attempts: int = 500
+        cell_size: int = 2,
+        ft_per_cell: int = 10,
+        # building size bounds (in feet)
+        b_min_ft: int = 250,
+        b_max_ft: int = 500,
+        num_attempts: int = 200,
+        hollow_thickness: int = 10,   
+
+        shape_probabilities: dict = None
     ):
-        self.rows      = rows
-        self.cols      = cols
-        self.cell_size = cell_size
-        self._buffer   = 1  # one‐cell margin
+        self.rows        = rows
+        self.cols        = cols
+        self.cell_size   = cell_size
+        self.ft_per_cell = ft_per_cell
+
+        self.min_cells = max(1, b_min_ft // ft_per_cell)
+        self.max_cells = max(self.min_cells, b_max_ft // ft_per_cell)
+        self.buffer    = 1  # 1‑cell (=10 ft) buffer
+
+        self.hollow_thickness = hollow_thickness
 
         app = get_app()
         if not hasattr(app, "canvas"):
             raise RuntimeError("BearDownBotsApp must have a .canvas")
         self.canvas = app.canvas
 
-        # try placing up to num_attempts buildings
-        self._place_buildings(num_attempts)
-        # build the cell grid from building footprints
+        # default uniform probs, now including trapezoid
+        default_probs = {
+            "rectangle":       0.9,
+            "ratio_rectangle": 1.0,
+            "square":          0.8,
+            "hollow_square":   0.1,
+            "trapezoid":       0.3,
+        }
+        self.shape_probs = shape_probabilities or default_probs
+
+        total = sum(self.shape_probs.values())
+        self.shapes  = list(self.shape_probs.keys())
+        self.weights = [self.shape_probs[s]/total for s in self.shapes]
+
+        # Place buildings
+        self.buildings = []
+        self._place_buildings(
+            attempts  = num_attempts,
+            min_cells = self.min_cells,
+            max_cells = self.max_cells
+        )
+
+        # Fill & draw
         self._fill_grid()
-        # draw the final map
         self._draw_map()
 
-    def _place_buildings(self, num_attempts: int):
-        self.buildings = []  # list of (r0, c0, h, w)
-        for _ in range(num_attempts):
-            # pick a “base size” between 1/10 and 1/4 of the smaller dimension
-            base = random.randint(
-                min(self.rows, self.cols)//10,
-                max(2, min(self.rows, self.cols)//4)
-            )
-            # give it ±20% randomness
-            w = random.randint(int(base*0.8), int(base*1.2))
-            h = random.randint(int(base*0.8), int(base*1.2))
-            # clamp sizes so they actually fit
-            w = max(2, min(w, self.cols - 2))
-            h = max(2, min(h, self.rows - 2))
 
-            # pick a random top‐left that stays on the board
-            r0 = random.randint(0, self.rows - h)
-            c0 = random.randint(0, self.cols - w)
+    def _place_buildings(self, attempts, min_cells, max_cells):
+        for _ in range(attempts):
+            kind = random.choices(self.shapes, weights=self.weights, k=1)[0]
+            result = self._make_shape(kind, min_cells, max_cells)
+            if not result:
+                continue
+            cells, h, w = result
 
-            # build the buffered rectangle (including 1‐cell margin)
-            br0 = max(0, r0 - self._buffer)
-            bc0 = max(0, c0 - self._buffer)
-            br1 = min(self.rows - 1, r0 + h - 1 + self._buffer)
-            bc1 = min(self.cols - 1, c0 + w - 1 + self._buffer)
+            # skip if building+buffer won't fit
+            if w + 2*self.buffer > self.cols or h + 2*self.buffer > self.rows:
+                continue
 
-            # test against every existing building’s true footprint
+            # random origin that respects buffer
+            r0 = random.randint(self.buffer, self.rows - h - self.buffer)
+            c0 = random.randint(self.buffer, self.cols - w - self.buffer)
+
+            # inflated bbox for spacing test
+            br0, bc0 = r0 - self.buffer, c0 - self.buffer
+            br1 = r0 + h - 1 + self.buffer
+            bc1 = c0 + w - 1 + self.buffer
+
             conflict = False
-            for (or0, oc0, oh, ow) in self.buildings:
-                or1 = or0 + oh - 1
-                oc1 = oc0 + ow - 1
-                # do rectangles [br0..br1]×[bc0..bc1] vs [or0..or1]×[oc0..oc1] overlap?
+            for b in self.buildings:
+                or0, oc0, oh, ow = b["r0"], b["c0"], b["h"], b["w"]
+                or1, oc1 = or0 + oh - 1, oc0 + ow - 1
                 if not (br1 < or0 or br0 > or1 or bc1 < oc0 or bc0 > oc1):
                     conflict = True
                     break
 
             if not conflict:
-                # accepts this building
-                self.buildings.append((r0, c0, h, w))
+                self.buildings.append({"cells": cells, "r0": r0, "c0": c0, "h": h, "w": w})
+
+
+    def _make_shape(self, kind, min_c, max_c):
+        """
+        Returns (cells_list, height, width) or None if unbuildable.
+        cells_list is offsets (dr,dc) from the top‑left corner.
+        """
+        # rectangle
+        if kind == "rectangle":
+            base = random.randint(min_c, max_c)
+            w = random.randint(max(1,int(base*0.5)), int(base*2))
+            h = random.randint(max(1,int(base*0.5)), int(base*2))
+            cells = [(dr, dc) for dr in range(h) for dc in range(w)]
+            return (cells, h, w)
+
+        # ratio_rectangle (1:2 aspect)
+        if kind == "ratio_rectangle":
+            base_max = max_c // 2
+            if min_c > base_max:
+                return None
+            base = random.randint(min_c, base_max)
+            w, h = base, base*2
+            if random.random() < 0.5:
+                w, h = h, w
+            cells = [(dr, dc) for dr in range(h) for dc in range(w)]
+            return (cells, h, w)
+
+        # solid square
+        if kind == "square":
+            side = random.randint(min_c, max_c)
+            cells = [(dr, dc) for dr in range(side) for dc in range(side)]
+            return (cells, side, side)
+
+        # hollow square
+        if kind == "hollow_square":
+            # ensure side is at least big enough to fit two borders
+            side = random.randint(
+                max(2*self.hollow_thickness + 1, min_c),
+                max_c
+            )
+            t = self.hollow_thickness
+            cells = []
+            for dr in range(side):
+                for dc in range(side):
+                    # include any cell within t of the outer edge
+                    if dr < t or dr >= side - t or dc < t or dc >= side - t:
+                        cells.append((dr, dc))
+            return (cells, side, side)
+
+        # trapezoid
+        if kind == "trapezoid":
+            h = random.randint(min_c, max_c)
+            top    = random.randint(min_c, max_c)
+            bottom = random.randint(min_c, max_c)
+            max_w  = max(top, bottom)
+            cells  = []
+            # for each row, interpolate width and center it
+            for dr in range(h):
+                if h > 1:
+                    w_i = round(top + (bottom - top) * dr / (h - 1))
+                else:
+                    w_i = top
+                offset = (max_w - w_i) // 2
+                for dc in range(w_i):
+                    cells.append((dr, offset + dc))
+            return (cells, h, max_w)
+
+        return None
+
 
     def _fill_grid(self):
-        # start with every cell = walkway
-        self.grid = [["walkway"] * self.cols for _ in range(self.rows)]
-        # paint in each building
-        for (r0, c0, h, w) in self.buildings:
-            for r in range(r0, r0 + h):
-                for c in range(c0, c0 + w):
-                    self.grid[r][c] = "building"
+        self.grid = [["walkway"]*self.cols for _ in range(self.rows)]
+        for b in self.buildings:
+            r0, c0 = b["r0"], b["c0"]
+            for dr, dc in b["cells"]:
+                self.grid[r0+dr][c0+dc] = "building"
+
 
     def _draw_map(self):
-        colors = {
-            "building": "#D2B48C",  # tan
-            "walkway":  "#FFFFFF",  # white
-        }
+        colors = {"building":"#D2B48C","walkway":"#FFFFFF"}
         for r in range(self.rows):
             for c in range(self.cols):
                 fill = colors[self.grid[r][c]]
-                x1 = c * self.cell_size
-                y1 = r * self.cell_size
-                x2 = x1 + self.cell_size
-                y2 = y1 + self.cell_size
+                x1, y1 = c*self.cell_size, r*self.cell_size
+                x2, y2 = x1+self.cell_size, y1+self.cell_size
                 self.canvas.create_rectangle(
                     x1, y1, x2, y2,
-                    fill=fill, outline="black", width=1
+                    fill=fill,
+                    outline="", width=0
                 )
 
-    def highlight_cell(self, r: int, c: int, color: str = "yellow"):
-        """Recolor a single cell after drawing."""
+
+    def highlight_cell(self, r:int, c:int, color:str="yellow"):
         x1 = c*self.cell_size + 1
         y1 = r*self.cell_size + 1
         x2 = x1 + self.cell_size - 2

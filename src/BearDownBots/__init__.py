@@ -5,11 +5,10 @@ from BearDownBots.app_context import set_app
 from BearDownBots.environment.campus import Campus
 
 def main():
-    app = BearDownBotsApp(width=600, height=400)
+    app = BearDownBotsApp(width=1000, height=800)
     set_app(app)
 
-    # draw a campus of 20×30 cells of size 20px
-    campus = Campus(rows=20, cols=30, cell_size=20)
+    campus = Campus(rows=300, cols=350)
 
 
     app.mainloop()

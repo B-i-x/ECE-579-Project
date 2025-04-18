@@ -1,4 +1,4 @@
-from src.app_context import get_app
+from FoodieApp.app_context import get_app
 
 
 class Robot:

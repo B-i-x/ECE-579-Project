@@ -19,14 +19,12 @@ Dev guide in src/
     ```bash
     cd ECE-579-Project
     ```
-3. Install dependencies (if applicable):
+3. Install dependencies:
     ```bash
-    # Example for Python
     pip install .
     ```
 4. Run the project:
     ```bash
-    # Replace with actual command
     python main.py
     ```
 

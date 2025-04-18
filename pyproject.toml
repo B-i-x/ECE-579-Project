@@ -16,22 +16,13 @@ dependencies = [
   #   sudo apt install python3-tk
 ]
 
-# optional dependencies
 [build-system]
-requires = ["hatchling >= 1.26"]
-build-backend = "hatchling.build"
+# A list of packages that are needed to build your package:
+requires = ["setuptools"] # REQUIRED if [build-system] table is used
+build-backend = "setuptools.build_meta" # If not defined, then legacy behavior can happen.
 
 
 # console‐script entry point; adjust target if your main() lives in a different module
 [project.scripts]
-run = "main:main"
+run = "FoodieApp:main"
 
-# ─────────────────────────────────────────────────────────
-# strip the leading src/ when packaging so that:
-#   src/main.py → importable as module “main”
-# ─────────────────────────────────────────────────────────
-[tool.hatch.build.targets.wheel]
-sources = ["src"]
-
-[tool.hatch.build.targets.sdist]
-sources = ["src"]

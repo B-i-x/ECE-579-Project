@@ -1,5 +1,21 @@
 import random
 from BearDownBots.app_context import get_app
+from BearDownBots.environment.buildings import (
+    RectangleBuilding,
+    RatioRectangleBuilding,
+    SquareBuilding,
+    HollowSquareBuilding,
+    TrapezoidBuilding,
+)
+
+SHAPE_CLASSES = {
+    "rectangle":       RectangleBuilding,
+    "ratio_rectangle": RatioRectangleBuilding,
+    "square":          SquareBuilding,
+    "hollow_square":   HollowSquareBuilding,
+    "trapezoid":       TrapezoidBuilding,
+}
+
 
 class Campus:
     """
@@ -81,10 +97,12 @@ class Campus:
     def _place_buildings(self, attempts, min_cells, max_cells):
         for _ in range(attempts):
             kind = random.choices(self.shapes, weights=self.weights, k=1)[0]
-            result = self._make_shape(kind, min_cells, max_cells)
-            if not result:
-                continue
-            cells, h, w = result
+            cls  = SHAPE_CLASSES[kind]
+            if kind == "hollow_square":
+                bld = cls(min_cells, max_cells, self.hollow_thickness)
+            else:
+                bld = cls(min_cells, max_cells)
+            cells, h, w = bld.cells, bld.h, bld.w
 
             # skip if building+buffer won't fit
             if w + 2*self.buffer > self.cols or h + 2*self.buffer > self.rows:

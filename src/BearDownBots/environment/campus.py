@@ -67,9 +67,9 @@ class Campus:
         self.grid = Grid(rows, cols)
 
         app = get_app()
-        if not hasattr(app, "canvas"):
+        if not hasattr(app, "campus_canvas"):
             raise RuntimeError("BearDownBotsApp must have a .canvas")
-        self.canvas = app.canvas
+        self.canvas = app.campus_canvas
 
         # default uniform probs, now including trapezoid
         default_probs = {

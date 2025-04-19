@@ -1,5 +1,7 @@
 import random
 from BearDownBots.app_context import get_app
+from BearDownBots.environment.grid import Grid
+from BearDownBots.environment.cell import Cell, BuildingCell, WalkwayCell
 from BearDownBots.environment.buildings import (
     RectangleBuilding,
     RatioRectangleBuilding,
@@ -61,6 +63,8 @@ class Campus:
         self.buffer    = 1  # 1‑cell (=10 ft) buffer
 
         self.hollow_thickness = hollow_thickness
+
+        self.grid = Grid(rows, cols)
 
         app = get_app()
         if not hasattr(app, "canvas"):
@@ -198,20 +202,57 @@ class Campus:
 
 
     def _fill_grid(self):
-        self.grid = [["walkway"]*self.cols for _ in range(self.rows)]
+        """
+        Populate self.grid (a Grid of ObstacleCell by default) by:
+        1) stamping each building footprint as BuildingCell
+        2) carving a 1‑cell buffer around those footprints as WalkwayCell
+        """
+        # 1) Stamp building footprints
         for b in self.buildings:
             r0, c0 = b["r0"], b["c0"]
             for dr, dc in b["cells"]:
-                self.grid[r0+dr][c0+dc] = "building"
+                self.grid.set_cell(r0 + dr, c0 + dc, BuildingCell(r0 + dr, c0 + dc))
+
+        # 2) Carve sidewalks: any obstacle cell adjacent to a building becomes a walkway
+        for r in range(self.rows):
+            for c in range(self.cols):
+                # skip if already a building
+                if isinstance(self.grid.get_cell(r, c), BuildingCell):
+                    continue
+
+                # check 8 neighbors for a building
+                for dr in (-1, 0, 1):
+                    for dc in (-1, 0, 1):
+                        if dr == 0 and dc == 0:
+                            continue
+                        nr, nc = r + dr, c + dc
+                        if 0 <= nr < self.rows and 0 <= nc < self.cols:
+                            if isinstance(self.grid.get_cell(nr, nc), BuildingCell):
+                                # carve walkway here
+                                self.grid.set_cell(r, c, WalkwayCell(r, c))
+                                break
+                    else:
+                        continue
+                    break
 
 
     def _draw_map(self):
-        colors = {"building":"#D2B48C","walkway":"#FFFFFF"}
+        """
+        Draw each cell by querying its .type
+        """
+        colors = {
+            "building": "#D2B48C",
+            "walkway":  "#808080",  # gray sidewalks
+            "obstacle": "#FFFFFF",  # or whatever your default
+        }
         for r in range(self.rows):
             for c in range(self.cols):
-                fill = colors[self.grid[r][c]]
-                x1, y1 = c*self.cell_size, r*self.cell_size
-                x2, y2 = x1+self.cell_size, y1+self.cell_size
+                cell = self.grid.get_cell(r, c)
+                fill = colors[cell.type]
+                x1 = c * self.cell_size
+                y1 = r * self.cell_size
+                x2 = x1 + self.cell_size
+                y2 = y1 + self.cell_size
                 self.canvas.create_rectangle(
                     x1, y1, x2, y2,
                     fill=fill,

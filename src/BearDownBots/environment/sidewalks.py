@@ -9,8 +9,8 @@ class Sidewalks:
     """
     def __init__(self, campus):
         """
-        campus: an instance of Campus, which has attributes:
-          - grid:    2D list of "building" or "walkway"
+        campus: an instance of Campus, which now has:
+          - grid:    a Grid object with get_cell(r, c).type
           - rows, cols, cell_size
         """
         self.campus = campus
@@ -23,12 +23,12 @@ class Sidewalks:
         gray = "#808080"  # sidewalk color
         for r in range(self.campus.rows):
             for c in range(self.campus.cols):
-                if self.campus.grid[r][c] == "walkway":
+                cell = self.campus.grid.get_cell(r, c)
+                if cell.type == "walkway":
                     x1 = c * self.campus.cell_size
                     y1 = r * self.campus.cell_size
                     x2 = x1 + self.campus.cell_size
                     y2 = y1 + self.campus.cell_size
-                    # draw gray sidewalk tile
                     self.canvas.create_rectangle(
                         x1, y1, x2, y2,
                         fill=gray,

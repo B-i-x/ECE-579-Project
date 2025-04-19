@@ -235,6 +235,68 @@ class Campus:
                         continue
                     break
 
+        self._connect_sidewalks()
+
+    
+    def _connect_sidewalks(self):
+        # gather all walkway coordinates
+        walk_cells = {(r,c)
+                      for r in range(self.rows)
+                      for c in range(self.cols)
+                      if self.grid.get_cell(r,c).type == "walkway"}
+        if not walk_cells:
+            return
+
+        # helper for 4‑neigh
+        def neighbors(cell):
+            r, c = cell
+            for dr, dc in ((1,0),(-1,0),(0,1),(0,-1)):
+                nr, nc = r+dr, c+dc
+                if 0 <= nr < self.rows and 0 <= nc < self.cols:
+                    yield (nr, nc)
+
+        # flood‑fill into connected components
+        comps, seen = [], set()
+        for cell in walk_cells:
+            if cell in seen:
+                continue
+            comp = set([cell])
+            queue = [cell]
+            seen.add(cell)
+            while queue:
+                cur = queue.pop()
+                for nb in neighbors(cur):
+                    if nb in walk_cells and nb not in seen:
+                        seen.add(nb)
+                        comp.add(nb)
+                        queue.append(nb)
+            comps.append(comp)
+
+        # pick “main” comp = the one containing the walkway nearest the grid center
+        cx, cy = self.rows//2, self.cols//2
+        nearest = min(walk_cells, key=lambda p: abs(p[0]-cx)+abs(p[1]-cy))
+        main_comp = next(comp for comp in comps if nearest in comp)
+
+        # connect every other comp back to main_comp
+        for comp in comps:
+            if comp is main_comp:
+                continue
+            # pick random endpoints
+            r1, c1 = random.choice(tuple(comp))
+            r0, c0 = random.choice(tuple(main_comp))
+
+            # carve an L‑shaped connector (horiz then vert)
+            # horizontal slice at row=r1
+            for cc in range(min(c1,c0), max(c1,c0)+1):
+                if not isinstance(self.grid.get_cell(r1,cc), BuildingCell):
+                    self.grid.set_cell(r1, cc, WalkwayCell(r1, cc))
+            # vertical slice at col=c0
+            for rr in range(min(r1,r0), max(r1,r0)+1):
+                if not isinstance(self.grid.get_cell(rr,c0), BuildingCell):
+                    self.grid.set_cell(rr, c0, WalkwayCell(rr, c0))
+
+            # merge them so further comps attach to unified main_comp
+            main_comp |= comp
 
     def _draw_map(self):
         """

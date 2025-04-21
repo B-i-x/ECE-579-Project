@@ -36,10 +36,10 @@ def main():
     # sidewalks.draw()
 
     # 7) Sprinkle static obstacles on 2% of walkways
-    obs_field = ObstacleField(campus, density=0.02)
+    obs_field = ObstacleField(campus)
     # You might want to ensure the warehouse cell is never blocked:
     warehouse_rc = (rows // 2, cols // 2)  # example
-    obs_field.drop(forbid={warehouse_rc})
+    obs_field.drop(num_obstacles=10, forbid={warehouse_rc})
 
     campus._draw_map()
 

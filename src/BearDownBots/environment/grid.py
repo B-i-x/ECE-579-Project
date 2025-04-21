@@ -1,14 +1,14 @@
 # src/BearDownBots/environment/grid.py
 
-from BearDownBots.environment.cell import Cell, BuildingCell, WalkwayCell, ObstacleCell
+from BearDownBots.environment.cell import Cell, GroundCell, BuildingCell, WalkwayCell, ObstacleCell
 
 class Grid:
     def __init__(self, rows: int, cols: int):
         self.rows = rows
         self.cols = cols
-        # initialize every cell as obstacle
+        # initialize every cell as a ground cell
         self.grid: list[list[Cell]] = [
-            [ObstacleCell(r, c) for c in range(cols)]
+            [GroundCell(r, c) for c in range(cols)]
             for r in range(rows)
         ]
 

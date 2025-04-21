@@ -27,3 +27,10 @@ class ObstacleCell(Cell):
     @property
     def type(self) -> str:
         return "obstacle"
+
+
+class GroundCell(Cell):
+    @property
+    def type(self) -> str:
+        return "ground"
+

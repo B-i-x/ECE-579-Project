@@ -4,21 +4,22 @@ from BearDownBots.gui import BearDownBotsApp
 from BearDownBots.app_context import set_app
 from BearDownBots.environment.campus import Campus
 from BearDownBots.environment.sidewalks import Sidewalks
+from BearDownBots.environment.obstacles import ObstacleField
 
 def main():
     # 1) Define your logical campus size and cell‐pixel size
-    rows, cols   = 300, 300
-    cell_size    = 2
-    map_width    = cols * cell_size
-    map_height   = rows * cell_size
+    rows, cols = 300, 300
+    cell_size = 2
+    map_width = cols * cell_size
+    map_height = rows * cell_size
 
     # 2) Define your dashboard and info‐pane dimensions
-    dashboard_h  = 80
-    info_width   = 200
+    dashboard_h = 80
+    info_width = 200
 
     # 3) Compute the total window size
-    win_width    = map_width + info_width
-    win_height   = map_height + dashboard_h
+    win_width = map_width + info_width
+    win_height = map_height + dashboard_h
 
     # 4) Create the app window at exactly the size you need
     app = BearDownBotsApp(width=win_width, height=win_height)
@@ -31,10 +32,18 @@ def main():
 
     # 6) Build the campus, draw sidewalks
     campus   = Campus(rows=rows, cols=cols, cell_size=cell_size)
-    sidewalks = Sidewalks(campus)
-    sidewalks.draw()
+    # sidewalks = Sidewalks(campus)
+    # sidewalks.draw()
 
-    # 7) Launch
+    # 7) Sprinkle static obstacles on 2% of walkways
+    obs_field = ObstacleField(campus, density=0.02)
+    # You might want to ensure the warehouse cell is never blocked:
+    warehouse_rc = (rows // 2, cols // 2)  # example
+    obs_field.drop(forbid={warehouse_rc})
+
+    campus._draw_map()
+
+    # 8) Launch
     app.mainloop()
 
 if __name__ == "__main__":

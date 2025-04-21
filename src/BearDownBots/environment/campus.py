@@ -18,6 +18,11 @@ SHAPE_CLASSES = {
     "trapezoid":       TrapezoidBuilding,
 }
 
+colors = {
+    "building": "#D2B48C",
+    "walkway":  "#808080",
+    "obstacle": "#B22222",   # ← deep red for clarity
+}
 
 class Campus:
     """
@@ -60,7 +65,7 @@ class Campus:
 
         self.min_cells = max(1, b_min_ft // ft_per_cell)
         self.max_cells = max(self.min_cells, b_max_ft // ft_per_cell)
-        self.buffer    = 1  # 1‑cell (=10 ft) buffer
+        self.buffer    = 1  # 1‑cell (=10ft) buffer
 
         self.hollow_thickness = hollow_thickness
 
@@ -303,9 +308,10 @@ class Campus:
         Draw each cell by querying its .type
         """
         colors = {
+            "ground": "#DFFFD0",
             "building": "#D2B48C",
             "walkway":  "#808080",  # gray sidewalks
-            "obstacle": "#FFFFFF",  # or whatever your default
+            "obstacle": "#B22222",
         }
         for r in range(self.rows):
             for c in range(self.cols):

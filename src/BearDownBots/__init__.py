@@ -37,11 +37,10 @@ def main():
 
     # 7) Sprinkle static obstacles on 2% of walkways
     obs_field = ObstacleField(campus)
-    # You might want to ensure the warehouse cell is never blocked:
-    warehouse_rc = (rows // 2, cols // 2)  # example
-    obs_field.drop(num_obstacles=10, forbid={warehouse_rc})
 
-    campus._draw_map()
+    obs_field.drop(num_obstacles=10, forbid=campus.restaurant_coords)
+
+    # campus._draw_map()
 
     # 8) Launch
     app.mainloop()

@@ -17,6 +17,12 @@ class BuildingCell(Cell):
         return "building"
 
 
+class RestaurantCell(Cell):
+    @property
+    def type(self) -> str:
+        return "restaurant"
+
+
 class WalkwayCell(Cell):
     @property
     def type(self) -> str:

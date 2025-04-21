@@ -1,7 +1,7 @@
 import random
 from BearDownBots.app_context import get_app
 from BearDownBots.environment.grid import Grid
-from BearDownBots.environment.cell import Cell, BuildingCell, WalkwayCell
+from BearDownBots.environment.cell import Cell, BuildingCell, WalkwayCell, RestaurantCell
 from BearDownBots.environment.buildings import (
     RectangleBuilding,
     RatioRectangleBuilding,
@@ -96,6 +96,14 @@ class Campus:
             attempts  = num_attempts,
             min_cells = self.min_cells,
             max_cells = self.max_cells
+        )
+
+        self.restaurant_bldg = self.buildings[0]
+
+        self.restaurant_coords = set(
+            (self.restaurant_bldg["r0"] + dr,
+             self.restaurant_bldg["c0"] + dc)
+            for dr, dc in self.restaurant_bldg["cells"]
         )
 
         # Fill & draw
@@ -216,13 +224,16 @@ class Campus:
         for b in self.buildings:
             r0, c0 = b["r0"], b["c0"]
             for dr, dc in b["cells"]:
-                self.grid.set_cell(r0 + dr, c0 + dc, BuildingCell(r0 + dr, c0 + dc))
+                if b is self.restaurant_bldg:
+                    self.grid.set_cell(r0 + dr, c0 + dc, RestaurantCell(r0 + dr, c0 + dc))
+                else:
+                    self.grid.set_cell(r0 + dr, c0 + dc, BuildingCell(r0 + dr, c0 + dc))
 
         # 2) Carve sidewalks: any obstacle cell adjacent to a building becomes a walkway
         for r in range(self.rows):
             for c in range(self.cols):
                 # skip if already a building
-                if isinstance(self.grid.get_cell(r, c), BuildingCell):
+                if isinstance(self.grid.get_cell(r, c), (BuildingCell, RestaurantCell)):
                     continue
 
                 # check 8 neighbors for a building
@@ -232,7 +243,7 @@ class Campus:
                             continue
                         nr, nc = r + dr, c + dc
                         if 0 <= nr < self.rows and 0 <= nc < self.cols:
-                            if isinstance(self.grid.get_cell(nr, nc), BuildingCell):
+                            if isinstance(self.grid.get_cell(nr, nc), (BuildingCell, RestaurantCell)):
                                 # carve walkway here
                                 self.grid.set_cell(r, c, WalkwayCell(r, c))
                                 break
@@ -293,11 +304,11 @@ class Campus:
             # carve an L‑shaped connector (horiz then vert)
             # horizontal slice at row=r1
             for cc in range(min(c1,c0), max(c1,c0)+1):
-                if not isinstance(self.grid.get_cell(r1,cc), BuildingCell):
+                if not isinstance(self.grid.get_cell(r1,cc), (BuildingCell, RestaurantCell)):
                     self.grid.set_cell(r1, cc, WalkwayCell(r1, cc))
             # vertical slice at col=c0
             for rr in range(min(r1,r0), max(r1,r0)+1):
-                if not isinstance(self.grid.get_cell(rr,c0), BuildingCell):
+                if not isinstance(self.grid.get_cell(rr,c0), (BuildingCell, RestaurantCell)):
                     self.grid.set_cell(rr, c0, WalkwayCell(rr, c0))
 
             # merge them so further comps attach to unified main_comp
@@ -310,6 +321,7 @@ class Campus:
         colors = {
             "ground": "#DFFFD0",
             "building": "#D2B48C",
+            "restaurant": "#FFB347",
             "walkway":  "#808080",  # gray sidewalks
             "obstacle": "#B22222",
         }

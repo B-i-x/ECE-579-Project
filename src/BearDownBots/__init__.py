@@ -6,6 +6,7 @@ from BearDownBots.environment.campus import Campus
 from BearDownBots.environment.sidewalks import Sidewalks
 from BearDownBots.environment.obstacles import ObstacleField
 
+
 def main():
     # 1) Define your logical campus size and cell‐pixel size
     rows, cols = 300, 300
@@ -31,7 +32,7 @@ def main():
     app.dashboard_frame.config(height=dashboard_h)
 
     # 6) Build the campus, draw sidewalks
-    campus   = Campus(rows=rows, cols=cols, cell_size=cell_size)
+    campus = Campus(rows=rows, cols=cols, cell_size=cell_size)
     # sidewalks = Sidewalks(campus)
     # sidewalks.draw()
 

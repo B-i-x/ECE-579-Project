@@ -33,15 +33,11 @@ def main():
 
     # 6) Build the campus, draw sidewalks
     campus = Campus(rows=rows, cols=cols, cell_size=cell_size)
-    # sidewalks = Sidewalks(campus)
-    # sidewalks.draw()
 
     # 7) Sprinkle static obstacles on 2% of walkways
     obs_field = ObstacleField(campus)
 
     obs_field.drop(num_obstacles=10, forbid=campus.restaurant_coords)
-
-    # campus._draw_map()
 
     # 8) Launch
     app.mainloop()

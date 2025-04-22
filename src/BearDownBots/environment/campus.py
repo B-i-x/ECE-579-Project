@@ -25,6 +25,50 @@ colors = {
     "obstacle": "#B22222",   # ← deep red for clarity
 }
 
+# ------------------------------------------------------------------
+#  Campus‑flavoured building names  (60 unique entries)
+# ------------------------------------------------------------------
+CAMPUS_NAMES = [
+    # academic halls
+    "Physics Hall", "Chemistry Hall", "Biology Hall", "Mathematics Hall",
+    "Computer Science Center", "Engineering Annex", "Civil Engineering Lab",
+    "Aerospace Research Wing", "Optics Institute", "Robotics Center",
+    "Environmental Sciences", "Neuroscience Pavilion",
+    "Humanities Hall", "Philosophy House", "History Hall",
+    "Language Arts Building", "Journalism Center", "Music Conservatory",
+    "Art & Design Studio", "Theatre Arts Complex",
+
+    # lecture and event venues
+    "Centennial Auditorium", "Heritage Theatre", "Innovation Forum",
+    "Discovery Lecture Hall", "Founders Conference Center",
+
+    # libraries & study
+    "Main Library", "Science Library", "Law Library",
+
+    # student life & admin
+    "Student Union", "Campus Bookstore", "Career Services",
+    "Health Services", "Recreation Center", "Financial Aid Office",
+    "Admissions Hall", "International Programs", "Alumni House",
+    "Campus Police Headquarters",
+
+    # dorms & apartments
+    "Ocotillo Dorm", "Saguaro Hall", "Agave Suites",
+    "Bear Creek Apartments", "Cactus Court", "Desert Vista Hall",
+    "Mesa Residence", "Rincon Suites", "Catalina Complex",
+
+    # dining & retail (non‑restaurant bldg)
+    "Coffee Commons", "Campus Market", "Print & Copy Center",
+
+    # athletics
+    "Bear Down Gym", "Track & Field House", "Aquatics Center",
+    "Stadium Offices", "Athletic Training Facility",
+
+    # research parks / misc
+    "Innovation Hub", "Technology Incubator", "Sustainability Center",
+    "Data Science Lab", "Cybersecurity Institute"
+]
+
+
 class Campus:
     """
     Places varied‐shaped buildings in one pass:
@@ -102,6 +146,8 @@ class Campus:
         self.restaurant_bldg = self.buildings[0]
         self.restaurant_bldg["name"] = "Bear Down Express"
 
+        self._assign_building_names()
+
         self.restaurant_coords = set(
             (self.restaurant_bldg["r0"] + dr,
              self.restaurant_bldg["c0"] + dc)
@@ -149,6 +195,30 @@ class Campus:
             if not conflict:
                 self.buildings.append({"id":   next_id, "cells": cells, "r0": r0, "c0": c0, "h": h, "w": w, "kind": kind})
                 next_id += 1
+
+    def _assign_building_names(self):
+        """
+        Randomly assign each NON‑restaurant building a unique name from the
+        CAMPUS_NAMES list.  We assert that the pool is big enough.
+        """
+        import random
+
+        pool_needed = len(self.buildings) - 1  # minus restaurant
+        assert pool_needed <= len(CAMPUS_NAMES), (
+            f"Need {pool_needed} unique names but only "
+            f"{len(CAMPUS_NAMES)} provided.  Please add more."
+        )
+
+        # shuffle once, then iterate
+        shuffled = random.sample(CAMPUS_NAMES, pool_needed)
+        name_iter = iter(shuffled)
+
+        for b in self.buildings:
+            if b is self.restaurant_bldg:
+                b["name"] = "Bear Down Express"
+            else:
+                b["name"] = next(name_iter)
+
 
     def get_building_by_id(self, bid: int):
         """Return the building dict with matching id (or None)."""
@@ -430,7 +500,7 @@ class Campus:
                                              fill=fill, outline="", width=0)
 
         # ---------- PASS 2: labels ----------
-        self._label_buildings()  # ← new helper, see below
+        self._label_buildings()
 
     def _label_buildings(self):
         """

@@ -25,28 +25,32 @@ class BearDownBotsApp(tk.Tk):
         stop_resized  = stop_img.resize((32, 32), Image.LANCZOS)
         self.start_icon = ImageTk.PhotoImage(start_resized)
         self.stop_icon  = ImageTk.PhotoImage(stop_resized)
+
+
         # Start and Stop buttons on dashboard with icons
+# Center frame for Start/Stop buttons
+        self.center_frame = tk.Frame(self.dashboard_frame, bg="lightgrey")
+        self.center_frame.pack(side=tk.LEFT, expand=True)
+
+        # Start and Stop buttons
         self.start_button = tk.Button(
-            self.dashboard_frame,
+            self.center_frame,
             image=self.start_icon,
             bd=0,
             highlightthickness=0,
-            relief=tk.FLAT,
-            width=32,
-            height=32
+            relief=tk.FLAT
         )
-        self.start_button.pack(side=tk.RIGHT, padx=10, pady=20)
+        self.start_button.pack(side=tk.LEFT, padx=5)
 
         self.stop_button = tk.Button(
-            self.dashboard_frame,
+            self.center_frame,
             image=self.stop_icon,
             bd=0,
             highlightthickness=0,
-            relief=tk.FLAT,
-            width=32,
-            height=32
+            relief=tk.FLAT
         )
-        self.stop_button.pack(side=tk.RIGHT, padx=10, pady=20)
+        self.stop_button.pack(side=tk.LEFT, padx=5)
+
 
 
         # Main content area: split screen

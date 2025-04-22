@@ -12,6 +12,7 @@ keywords = ["robotics", "automation", "ECE-579"]
 # runtime dependencies
 dependencies = [
   "numpy>=1.24",
+  "Pillow",
   # tkinter is part of the standard library; on Debian/Ubuntu:
   #   sudo apt install python3-tk
 ]

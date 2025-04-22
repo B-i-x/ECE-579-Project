@@ -8,7 +8,7 @@ _app = None
 def set_app(app):
     global _app
     _app = app
-
+ 
 
 def get_app() -> BearDownBotsApp:
     """
@@ -18,3 +18,4 @@ def get_app() -> BearDownBotsApp:
         The FoodieApp instance, or None if not set.
     """
     return _app
+

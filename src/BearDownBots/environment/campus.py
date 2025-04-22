@@ -9,6 +9,7 @@ from BearDownBots.environment.buildings import (
     HollowSquareBuilding,
     TrapezoidBuilding,
 )
+from BearDownBots.environment.randOrders import OrderGenerator 
 
 SHAPE_CLASSES = {
     "rectangle":       RectangleBuilding,
@@ -348,3 +349,16 @@ class Campus:
         items = self.canvas.find_enclosed(x1, y1, x2, y2)
         if items:
             self.canvas.itemconfig(items[0], fill=color)
+
+    def generate_random_order(self):
+        """
+        Pick one of this campus’s buildings at random
+        and generate a single random food order for it.
+        Returns a tuple: (building_dict, Order instance).
+        """
+        # 1) pick a building footprint
+        b = random.choice(self.buildings)
+        # 2) generate one random order
+        order = OrderGenerator(num_orders=1).generate_orders()[0]
+        return b, order
+            

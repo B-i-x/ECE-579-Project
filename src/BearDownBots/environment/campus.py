@@ -1,4 +1,6 @@
 import random
+import time
+import schedule
 from BearDownBots.app_context import get_app
 from BearDownBots.environment.grid import Grid
 from BearDownBots.environment.cell import Cell, BuildingCell, WalkwayCell, RestaurantCell
@@ -10,6 +12,7 @@ from BearDownBots.environment.buildings import (
     TrapezoidBuilding,
 )
 from BearDownBots.environment.randOrders import OrderGenerator 
+from BearDownBots.environment.resturant import Restaurant 
 
 SHAPE_CLASSES = {
     "rectangle":       RectangleBuilding,
@@ -144,7 +147,9 @@ class Campus:
                     break
 
             if not conflict:
-                self.buildings.append({"cells": cells, "r0": r0, "c0": c0, "h": h, "w": w})
+                name = f"Building_{len(self.buildings)+1}"
+                self.buildings.append({"name": name, "cells": cells, "r0": r0, "c0": c0, "h": h, "w": w})
+
 
 
     def _make_shape(self, kind, min_c, max_c):
@@ -350,15 +355,62 @@ class Campus:
         if items:
             self.canvas.itemconfig(items[0], fill=color)
 
+
+class RandomOrderScheduler:
+    def __init__(self, buildings, order_placer):
+        """
+        buildings: list of building dicts/objects
+        order_placer: an instance with a .place_order(building, order) method
+        """
+        self.buildings = buildings
+        self.order_placer = order_placer
+
     def generate_random_order(self):
         """
         Pick one of this campus’s buildings at random
         and generate a single random food order for it.
-        Returns a tuple: (building_dict, Order instance).
+        Returns a tuple: (building, Order instance).
         """
         # 1) pick a building footprint
         b = random.choice(self.buildings)
         # 2) generate one random order
         order = OrderGenerator(num_orders=1).generate_orders()[0]
         return b, order
-            
+
+    def place_random_order(self):
+        """
+        Generate a random order and send it via the order_placer.
+        """
+        building, order = self.generate_random_order()
+        # Replace the next line with however you send/place the order:
+        self.order_placer.place_order(building, order)
+        print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Placed order for {building['name']}: {order}")
+
+    def start(self, interval_minutes=1):
+        """
+        Schedule place_random_order() to run every `interval_minutes`.
+        """
+        schedule.every(interval_minutes).minutes.do(self.place_random_order)
+        print(f"Started random order scheduler: every {interval_minutes} minutes.")
+
+        try:
+            # Run pending jobs in a loop
+            while True:
+                schedule.run_pending()
+                time.sleep(1)
+        except KeyboardInterrupt:
+            print("Scheduler stopped by user.")
+
+
+# Create an order-placer. Replace with your real ordering API/client.
+class OrderPlacer:
+    def __init__(self, restaurant):
+        self.restaurant = restaurant
+
+    def place_order(self, building, order):
+        self.restaurant.receive_order(building, order)
+
+
+
+
+   

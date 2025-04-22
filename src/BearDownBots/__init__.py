@@ -1,8 +1,11 @@
 # src/BearDownBots/__init__.py
-
+import threading
 from BearDownBots.gui import BearDownBotsApp
 from BearDownBots.app_context import set_app
 from BearDownBots.environment.campus import Campus
+from BearDownBots.environment.campus import RandomOrderScheduler
+from BearDownBots.environment.campus import OrderPlacer
+from BearDownBots.environment.resturant import Restaurant
 from BearDownBots.environment.sidewalks import Sidewalks
 from BearDownBots.environment.obstacles import ObstacleField
 
@@ -39,6 +42,16 @@ def main():
     obs_field = ObstacleField(campus)
 
     obs_field.drop(num_obstacles=10, forbid=campus.restaurant_coords)
+
+
+    restaurant = Restaurant()
+    order_placer = OrderPlacer(restaurant)
+
+
+    # === START THE SCHEDULER ===
+    buildings = campus.buildings
+    scheduler = RandomOrderScheduler(buildings, order_placer)
+    threading.Thread(target=scheduler.start, daemon=True).start()
 
     # campus._draw_map()
 

@@ -1,6 +1,12 @@
 from enum import Enum
 
-class CELL_TYPES(Enum):
+class InitialEnum(Enum):
+    @property
+    def initial(self) -> str:
+        # take the first character of the name
+        return self.name[0]
+    
+class CELL_TYPES(InitialEnum):
     GROUND = 0
     BUILDING = 1
     WALKWAY = 2

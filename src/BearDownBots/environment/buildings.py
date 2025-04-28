@@ -3,7 +3,7 @@ import random
 from BearDownBots.environment.cell_types import CELL_TYPES
 from BearDownBots.environment.map import Map
 
-def randomly_place_buildings_on_map(campus_map: Map, max_attempts: int = 100) -> bool:
+def randomly_place_buildings_onto_map(campus_map: Map, max_attempts: int = 100) -> bool:
     """
     Attempt to place a building on the map at a random location.
     Returns True if successful, False if not.

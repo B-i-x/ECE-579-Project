@@ -40,3 +40,25 @@ class Map:
         """
         cell = self.get_cell(x, y)
         cell.remove_type(cell_type)
+
+    def __repr__(self):
+        # build 2D list of initials
+        rows_letters = []
+        max_len = 0
+
+        for row in self.grid:
+            row_repr = []
+            for cell in row:
+                # pull initials from the enum
+                initials = ''.join(sorted(t.initial for t in cell.types))
+                row_repr.append(initials)
+                max_len = max(max_len, len(initials))
+            rows_letters.append(row_repr)
+
+        # pad and join
+        lines = []
+        for row_repr in rows_letters:
+            padded = [s.ljust(max_len) for s in row_repr]
+            lines.append(' '.join(padded))
+
+        return '\n'.join(lines)

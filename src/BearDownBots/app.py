@@ -1,6 +1,6 @@
 import tkinter as tk
 
-class BearDownBotsApp(tk.Tk):
+class BearDownBots(tk.Tk):
     def __init__(self, width, height):
         super().__init__()
         self.title("Bear Down Bots Simulator")

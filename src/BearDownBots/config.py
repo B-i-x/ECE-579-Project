@@ -9,8 +9,5 @@ class Config:
 
     class Environment:
         # environment
-        MAP_ROWS  = 50
+        MAP_ROWS  = 80
         MAP_COLS  = 80
-
-# optional singleton instance if you prefer attribute access
-config = Config()

@@ -1,42 +1,30 @@
 # src/BearDownBots/environment/cell.py
+from BearDownBots.environment.cell_types import CELL_TYPES
 
 class Cell:
-    """Base class for a grid cell."""
-    def __init__(self, row: int, col: int):
-        self.row = row
-        self.col = col
+    def __init__(self, x: int, y: int, cell_type: CELL_TYPES):
+        self.x = x
+        self.y = y
+        # store a set of types (allows multiple types per cell)
+        self.types = {cell_type}
 
-    @property
-    def type(self) -> str:
-        return "empty"
+    def add_type(self, cell_type: CELL_TYPES):
+        """
+        Add a type to this cell.
+        """
+        self.types.add(cell_type)
 
+    def remove_type(self, cell_type: CELL_TYPES):
+        """
+        Remove a type from this cell, if present.
+        """
+        self.types.discard(cell_type)
 
-class BuildingCell(Cell):
-    @property
-    def type(self) -> str:
-        return "building"
+    def has_type(self, cell_type: CELL_TYPES) -> bool:
+        """
+        Check if this cell has the given type.
+        """
+        return cell_type in self.types
 
-
-class RestaurantCell(Cell):
-    @property
-    def type(self) -> str:
-        return "restaurant"
-
-
-class WalkwayCell(Cell):
-    @property
-    def type(self) -> str:
-        return "walkway"
-
-
-class ObstacleCell(Cell):
-    @property
-    def type(self) -> str:
-        return "obstacle"
-
-
-class GroundCell(Cell):
-    @property
-    def type(self) -> str:
-        return "ground"
-
+    def __repr__(self):
+        return f"Cell({self.x}, {self.y}, types={self.types})"

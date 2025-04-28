@@ -1,7 +1,15 @@
 # src/BearDownBots/environment/buildings.py
-
 import random
-import math
+from BearDownBots.environment.cell_types import CELL_TYPES
+from BearDownBots.environment.map import Map
+
+def randomly_place_buildings_on_map(campus_map: Map, max_attempts: int = 100) -> bool:
+    """
+    Attempt to place a building on the map at a random location.
+    Returns True if successful, False if not.
+    """
+    pass
+    
 
 class Building:
     """Base class for all building types."""
@@ -9,10 +17,26 @@ class Building:
         self.cells  = cells   # list of (dr, dc) offsets from top-left
         self.h      = height
         self.w      = width
+        self.name   = random.choice(BUILDING_NAMES)  # random name from list
+
 
     def __repr__(self):
         return f"{self.__class__.__name__}(h={self.h}, w={self.w}, cells={len(self.cells)})"
 
+    def place(self, campus_map: Map, top_left: tuple[int,int]):
+        """
+        Place this building onto the given map at top_left (x, y).
+        Removes GROUND and adds BUILDING type to each cell.
+        """
+        x0, y0 = top_left
+        for dr, dc in self.cells:
+            x, y = x0 + dr, y0 + dc
+            # bounds check
+            if 0 <= x < campus_map.rows and 0 <= y < campus_map.cols:
+                campus_map.remove_cell_type(x, y, CELL_TYPES.GROUND)
+                campus_map.add_cell_type(x, y, CELL_TYPES.BUILDING)
+            else:
+                raise IndexError(f"Building placement out of map bounds at ({x},{y})")
 
 class RectangleBuilding(Building):
     """A general rectangle with random width and height."""
@@ -22,7 +46,6 @@ class RectangleBuilding(Building):
         h    = random.randint(max(1, int(base*0.5)), int(base*2))
         cells = [(dr, dc) for dr in range(h) for dc in range(w)]
         super().__init__(cells, h, w)
-
 
 class RatioRectangleBuilding(Building):
     """A 1:2 aspect rectangle (or flipped)."""
@@ -37,14 +60,12 @@ class RatioRectangleBuilding(Building):
         cells = [(dr, dc) for dr in range(h) for dc in range(w)]
         super().__init__(cells, h, w)
 
-
 class SquareBuilding(Building):
     """A solid square."""
     def __init__(self, min_cells: int, max_cells: int):
         side = random.randint(min_cells, max_cells)
         cells = [(dr, dc) for dr in range(side) for dc in range(side)]
         super().__init__(cells, side, side)
-
 
 class HollowSquareBuilding(Building):
     """A hollow square shell of configurable thickness."""
@@ -58,7 +79,6 @@ class HollowSquareBuilding(Building):
                    dc < thickness or dc >= side - thickness:
                     cells.append((dr, dc))
         super().__init__(cells, side, side)
-
 
 class TrapezoidBuilding(Building):
     """
@@ -80,3 +100,43 @@ class TrapezoidBuilding(Building):
             for dc in range(w_i):
                 cells.append((dr, offset + dc))
         super().__init__(cells, h, max_w)
+
+BUILDING_NAMES = [
+    # academic halls
+    "Physics Hall", "Chemistry Hall", "Biology Hall", "Mathematics Hall",
+    "Computer Science Center", "Engineering Annex", "Civil Engineering Lab",
+    "Aerospace Research Wing", "Optics Institute", "Robotics Center",
+    "Environmental Sciences", "Neuroscience Pavilion",
+    "Humanities Hall", "Philosophy House", "History Hall",
+    "Language Arts Building", "Journalism Center", "Music Conservatory",
+    "Art & Design Studio", "Theatre Arts Complex",
+
+    # lecture and event venues
+    "Centennial Auditorium", "Heritage Theatre", "Innovation Forum",
+    "Discovery Lecture Hall", "Founders Conference Center",
+
+    # libraries & study
+    "Main Library", "Science Library", "Law Library",
+
+    # student life & admin
+    "Student Union", "Campus Bookstore", "Career Services",
+    "Health Services", "Recreation Center", "Financial Aid Office",
+    "Admissions Hall", "International Programs", "Alumni House",
+    "Campus Police Headquarters",
+
+    # dorms & apartments
+    "Ocotillo Dorm", "Saguaro Hall", "Agave Suites",
+    "Bear Creek Apartments", "Cactus Court", "Desert Vista Hall",
+    "Mesa Residence", "Rincon Suites", "Catalina Complex",
+
+    # dining & retail (non‑restaurant bldg)
+    "Coffee Commons", "Campus Market", "Print & Copy Center",
+
+    # athletics
+    "Bear Down Gym", "Track & Field House", "Aquatics Center",
+    "Stadium Offices", "Athletic Training Facility",
+
+    # research parks / misc
+    "Innovation Hub", "Technology Incubator", "Sustainability Center",
+    "Data Science Lab", "Cybersecurity Institute"
+]

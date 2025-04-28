@@ -2,53 +2,73 @@
 import random
 from BearDownBots.environment.cell_types import CELL_TYPES
 from BearDownBots.environment.map import Map
+from BearDownBots.config import Config
 
-def randomly_place_buildings_onto_map(campus_map: Map, max_attempts: int = 100) -> bool:
+
+def randomly_place_buildings_onto_map(campus_map: Map) -> bool:
     """
-    Attempt to place a building on the map at a random location.
-    Returns True if successful, False if not.
+    Attempt to place a random building on the map.
+    Returns True if any placement succeeds within the configured attempts.
     """
-    pass
+
+    choices = list(Building.__subclasses__())
+    weights = [cls.likelihood for cls in choices]
+
+    for _ in range(Config.Environment.MAX_BUILDING_ATTEMPTS):
+        x = random.randint(0, campus_map.rows - 1)
+        y = random.randint(0, campus_map.cols - 1)
+
+        cls = random.choices(choices, weights=weights, k=1)[0]
+        bld = cls.generate(
+            Config.Environment.MIN_BUILDING_CELLS,
+            Config.Environment.MAX_BUILDING_CELLS
+        )
+
+        attempt = campus_map.attempt_to_place_building((x, y), (bld.h, bld.w))
+        if attempt:
+            print(f"Placed {bld} at ({x}, {y})")
+        else:
+            print(f"Failed to place {bld} at ({x}, {y})")
     
 
 class Building:
     """Base class for all building types."""
+    likelihood: float = 1.0  # default selection weight
+
     def __init__(self, cells: list[tuple[int,int]], height: int, width: int):
         self.cells  = cells   # list of (dr, dc) offsets from top-left
         self.h      = height
         self.w      = width
         self.name   = random.choice(BUILDING_NAMES)  # random name from list
 
-
+    @classmethod
+    def generate(cls, min_cells: int, max_cells: int) -> 'Building':
+        """
+        Factory method to create a new building instance with given cell count bounds.
+        Subclasses may override if additional parameters are needed.
+        """
+        return cls(min_cells, max_cells)
+    
     def __repr__(self):
         return f"{self.__class__.__name__}(h={self.h}, w={self.w}, cells={len(self.cells)})"
 
-    def place(self, campus_map: Map, top_left: tuple[int,int]):
-        """
-        Place this building onto the given map at top_left (x, y).
-        Removes GROUND and adds BUILDING type to each cell.
-        """
-        x0, y0 = top_left
-        for dr, dc in self.cells:
-            x, y = x0 + dr, y0 + dc
-            # bounds check
-            if 0 <= x < campus_map.rows and 0 <= y < campus_map.cols:
-                campus_map.remove_cell_type(x, y, CELL_TYPES.GROUND)
-                campus_map.add_cell_type(x, y, CELL_TYPES.BUILDING)
-            else:
-                raise IndexError(f"Building placement out of map bounds at ({x},{y})")
 
 class RectangleBuilding(Building):
     """A general rectangle with random width and height."""
+    likelihood = 1.0
+
     def __init__(self, min_cells: int, max_cells: int):
         base = random.randint(min_cells, max_cells)
-        w    = random.randint(max(1, int(base*0.5)), int(base*2))
-        h    = random.randint(max(1, int(base*0.5)), int(base*2))
+        w = random.randint(max(1, int(base * 0.5)), int(base * 2))
+        h = random.randint(max(1, int(base * 0.5)), int(base * 2))
         cells = [(dr, dc) for dr in range(h) for dc in range(w)]
         super().__init__(cells, h, w)
 
+
 class RatioRectangleBuilding(Building):
     """A 1:2 aspect rectangle (or flipped)."""
+    likelihood = 0.8
+
     def __init__(self, min_cells: int, max_cells: int):
         base_max = max_cells // 2
         if min_cells > base_max:
@@ -60,46 +80,52 @@ class RatioRectangleBuilding(Building):
         cells = [(dr, dc) for dr in range(h) for dc in range(w)]
         super().__init__(cells, h, w)
 
+
 class SquareBuilding(Building):
     """A solid square."""
+    likelihood = 0.8
+
     def __init__(self, min_cells: int, max_cells: int):
         side = random.randint(min_cells, max_cells)
         cells = [(dr, dc) for dr in range(side) for dc in range(side)]
         super().__init__(cells, side, side)
 
+
 class HollowSquareBuilding(Building):
-    """A hollow square shell of configurable thickness."""
-    def __init__(self, min_cells: int, max_cells: int, thickness: int = 1):
-        # ensure side >= 2*thickness + 1
-        side = random.randint(max(2*thickness + 1, min_cells), max_cells)
+    likelihood = 0.5
+    thickness: int = 5
+
+    def __init__(self, min_cells: int, max_cells: int, thickness: int = None):
+        t = thickness if thickness is not None else type(self).thickness
+        side = random.randint(max(2 * t + 1, min_cells), max_cells)
         cells = []
         for dr in range(side):
             for dc in range(side):
-                if dr < thickness or dr >= side - thickness or \
-                   dc < thickness or dc >= side - thickness:
+                if dr < t or dr >= side - t or dc < t or dc >= side - t:
                     cells.append((dr, dc))
         super().__init__(cells, side, side)
+
 
 class TrapezoidBuilding(Building):
     """
     A trapezoid: top width vs bottom width interpolate over height.
     The bounding box width = max(top, bottom).
     """
+    likelihood = 0.9
+
     def __init__(self, min_cells: int, max_cells: int):
-        h       = random.randint(min_cells, max_cells)
-        top     = random.randint(min_cells, max_cells)
-        bottom  = random.randint(min_cells, max_cells)
-        max_w   = max(top, bottom)
-        cells   = []
+        h = random.randint(min_cells, max_cells)
+        top = random.randint(min_cells, max_cells)
+        bottom = random.randint(min_cells, max_cells)
+        max_w = max(top, bottom)
+        cells = []
         for dr in range(h):
-            if h > 1:
-                w_i = round(top + (bottom - top) * dr / (h - 1))
-            else:
-                w_i = top
+            w_i = round(top + (bottom - top) * dr / (h - 1)) if h > 1 else top
             offset = (max_w - w_i) // 2
             for dc in range(w_i):
                 cells.append((dr, offset + dc))
         super().__init__(cells, h, max_w)
+
 
 BUILDING_NAMES = [
     # academic halls

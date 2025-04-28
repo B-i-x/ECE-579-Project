@@ -41,6 +41,36 @@ class Map:
         cell = self.get_cell(x, y)
         cell.remove_type(cell_type)
 
+    def attempt_to_place_building(self, top_left: tuple[int, int], outline: tuple[int, int]) -> bool:
+        """
+        Attempt to place a rectangular building of size (height, width) defined by outline
+        at the given top_left coordinate (x0, y0).
+        Checks if any cell in the rectangle already has BUILDING type; if so, returns False.
+        On success, replaces GROUND with BUILDING in that rectangle and returns True.
+        """
+        x0, y0 = top_left
+        height, width = outline
+
+        # Bounds check for the entire rectangle
+        if x0 < 0 or y0 < 0 or x0 + height > self.rows or y0 + width > self.cols:
+            return False
+
+        # Check for conflicts
+        for dx in range(height):
+            for dy in range(width):
+                cell = self.get_cell(x0 + dx, y0 + dy)
+                if cell.has_type(CELL_TYPES.BUILDING):
+                    return False
+
+        # Place the building
+        for dx in range(height):
+            for dy in range(width):
+                x, y = x0 + dx, y0 + dy
+                self.remove_cell_type(x, y, CELL_TYPES.GROUND)
+                self.add_cell_type(x, y, CELL_TYPES.BUILDING)
+
+        return True
+    
     def __repr__(self):
         # build 2D list of initials
         rows_letters = []

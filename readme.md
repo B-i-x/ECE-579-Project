@@ -4,6 +4,7 @@
 - **Eli Jacobson**
 - **Vai Pujary**
 - **Alex Romero**
+- **Derek Kropp**
 
 ## Project Description
 BearDownBots is an AI-driven expert system that orchestrates a fleet of three constant‑speed robots to deliver meals for the Bear Express restaurant across a configurable university campus. The system procedurally generates a bounded map (using maze‑generation techniques to place obstacles) and simulates random food orders arriving every 10 minutes from diverse campus locations.

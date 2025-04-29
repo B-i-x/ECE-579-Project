@@ -23,7 +23,7 @@ class CELL_TYPES(CustomCellTypeEnum):
     WALKWAY    = (2, "#555555")   # dark gray
     OBSTACLE   = (3, "#8B0000")   # dark red
     ROBOT      = (4, "#00008B")   # dark blue
-    RESTAURANT = (5, "#00aa00")
+    RESTAURANT = (5, "#e6eb14")   # yellow
     CUSTOMER   = (6, "#ffaa00")
 
 class OBSTACLE_TYPES(Enum):

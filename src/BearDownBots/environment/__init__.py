@@ -44,5 +44,10 @@ def create_campus_environment(progress_window: ProgressWindow) -> Map:
         progress_window.update_progress(i)
 
     campus_map.connect_sidewalks()
+
+    campus_map.create_food_warehouse()
+
+
     
+
     return campus_map

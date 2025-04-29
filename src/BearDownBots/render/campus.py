@@ -58,8 +58,7 @@ class CampusRenderer:
         for i in range(rows):
             for j in range(cols):
                 cell = self.campus_map.get_cell(i, j)
-                for t in (CELL_TYPES.OBSTACLE, CELL_TYPES.BUILDING,
-                          CELL_TYPES.WALKWAY, CELL_TYPES.GROUND):
+                for t in CELL_TYPES:
                     if cell.has_type(t):
                         color = t.color
                         break

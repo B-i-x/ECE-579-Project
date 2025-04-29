@@ -164,6 +164,20 @@ class Map:
             # merge component into main
             main |= comp
 
+    def create_food_warehouse(self):
+        """
+        Choose a random building and convert that to a food warehouse.
+        """
+        if not self.buildings:
+            return
+        building = random.choice(self.buildings)
+        # remove the building type from the cell
+        for dr, dc in building.cells:
+            x, y = building.top_left_x + dr, building.top_left_y + dc
+            cell = self.get_cell(x, y)
+            cell.remove_type(CELL_TYPES.BUILDING)
+            cell.add_type(CELL_TYPES.RESTAURANT)
+
     
     
     def __repr__(self):

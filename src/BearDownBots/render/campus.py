@@ -1,5 +1,5 @@
 import tkinter as tk
-from PIL import Image, ImageDraw, ImageTk
+from PIL import Image, ImageDraw, ImageTk, ImageFont
 
 from BearDownBots.config import Config
 from BearDownBots.environment.cell import CELL_TYPES
@@ -16,10 +16,9 @@ class CampusRenderer:
         self.parent = parent
         self.offset = (0, 0)
         self._drag_start = None
-        self.base_px = int(Config.GUI.PIXEL_TO_CELL_CONVERSION)
         self.zoom = 1.0
-        self.min_zoom = 0.25
-        self.max_zoom = 4.0
+        self.min_zoom = 0.5
+        self.max_zoom = 8.0
         self.canvas_w = int(Config.GUI.WINDOW_WIDTH_PIXELS)
         self.canvas_h = int(Config.GUI.WINDOW_HEIGHT_PIXELS)
 
@@ -48,8 +47,8 @@ class CampusRenderer:
 
     def _create_base_image(self) -> Image.Image:
         rows, cols = self.campus_map.rows, self.campus_map.cols
-        img_w = cols * self.base_px
-        img_h = rows * self.base_px
+        img_w = cols
+        img_h = rows 
         img = Image.new('RGB', (img_w, img_h), CELL_TYPES.GROUND.color)
         draw = ImageDraw.Draw(img)
 
@@ -64,16 +63,24 @@ class CampusRenderer:
                     if cell.has_type(t):
                         color = t.color
                         break
-                x0, y0 = j*self.base_px, i*self.base_px
-                draw.rectangle([x0, y0, x0+self.base_px, y0+self.base_px], fill=color)
+                x0, y0 = j, i
+                draw.rectangle([x0, y0, x0+1, y0+1], fill=color)
 
 
                 
             if i % 5 == 0:
                 self.progress_window.update_progress(i)
 
+        font = ImageFont.load_default()
+        for bld in self.campus_map.buildings:
+            x0, y0 = bld.get_center_coords()
+            text = bld.name
+            x_text = y0 + 1
+            y_text = x0 + 1
+            draw.text((x_text, y_text), text, fill='black', font=font)
 
         return img
+
 
     def _on_mouse_down(self, event):
         self._drag_start = (event.x, event.y, *self.offset)
@@ -83,7 +90,7 @@ class CampusRenderer:
             return
         x0, y0, ro, co = self._drag_start
         dx, dy = event.x - x0, event.y - y0
-        step = self.base_px * self.zoom
+        step = self.zoom
         dro = -int(dy/step)
         dco = -int(dx/step)
         max_ro = max(0, self.campus_map.rows - int(self.canvas_h/step))
@@ -98,19 +105,19 @@ class CampusRenderer:
         new_zoom = min(self.max_zoom, max(self.min_zoom, self.zoom + delta*0.1))
         if new_zoom != self.zoom:
             # compute center in image coords
-            cx = self.canvas_w/2 + self.offset[1]*self.base_px*self.zoom
-            cy = self.canvas_h/2 + self.offset[0]*self.base_px*self.zoom
+            cx = self.canvas_w/2 + self.offset[1]*self.zoom
+            cy = self.canvas_h/2 + self.offset[0]*self.zoom
             self.zoom = new_zoom
             size = (int(self._base_image.width*self.zoom), int(self._base_image.height*self.zoom))
             self._scaled_image = self._base_image.resize(size, Image.NEAREST)
             # recalc offset to maintain center
-            co = int((cx - self.canvas_w/2)/(self.base_px*self.zoom))
-            ro = int((cy - self.canvas_h/2)/(self.base_px*self.zoom))
+            co = int((cx - self.canvas_w/2)/(self.zoom))
+            ro = int((cy - self.canvas_h/2)/(self.zoom))
             self.offset = (max(0, ro), max(0, co))
             self.render()
 
     def render(self):
-        step = self.base_px * self.zoom
+        step = self.zoom
         ro, co = self.offset
         left, top = int(co*step), int(ro*step)
         right, bottom = left+self.canvas_w, top+self.canvas_h

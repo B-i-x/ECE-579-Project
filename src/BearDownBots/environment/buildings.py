@@ -1,17 +1,32 @@
 # src/BearDownBots/environment/buildings.py
 import random
+import uuid
 
     
 class Building:
     """Base class for all building types."""
     likelihood: float = 1.0  # default selection weight
 
-    def __init__(self, cells: list[tuple[int,int]], height: int, width: int):
-        self.cells  = cells   # list of (dr, dc) offsets from top-left
+    def __init__(self, cells: list[tuple[int, int]], height: int, width: int):
+        self.id     = uuid.uuid4()  # unique identifier for each building
+        self.cells  = cells         # list of (dr, dc) offsets from top-left
         self.h      = height
         self.w      = width
         self.name   = random.choice(BUILDING_NAMES)  # random name from list
+        
+        self.top_left_x = None  # to be set when placed on map
+        self.top_left_y = None  # to be set when placed on map
 
+    def get_center_coords(self):
+        """
+        Get the center coordinates based on top left coordiantes and its height and width
+        """
+        if self.top_left_x is None or self.top_left_y is None:
+            raise ValueError("Building not placed on map yet.")
+        center_x = self.top_left_x + self.h // 2
+        center_y = self.top_left_y + self.w // 2
+        return center_x, center_y
+    
     @classmethod
     def generate(cls, min_cells: int, max_cells: int) -> 'Building':
         """
@@ -21,7 +36,7 @@ class Building:
         return cls(min_cells, max_cells)
     
     def __repr__(self):
-        return f"{self.__class__.__name__}(h={self.h}, w={self.w}, cells={len(self.cells)})"
+        return f"{self.__class__.__name__}(id={self.id}, h={self.h}, w={self.w}, cells={len(self.cells)})"
 
 
 class RectangleBuilding(Building):

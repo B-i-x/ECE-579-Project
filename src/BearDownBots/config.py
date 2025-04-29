@@ -6,7 +6,6 @@ class Config:
         # general
         WINDOW_WIDTH_PIXELS  = 800
         WINDOW_HEIGHT_PIXELS = 600
-        PIXEL_TO_CELL_CONVERSION = 1
 
     class Environment:
         # environment

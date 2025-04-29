@@ -1,6 +1,8 @@
 from BearDownBots.environment.cell import Cell, CELL_TYPES
 from BearDownBots.environment.buildings import Building
 
+import random
+
 class Map:
     def __init__(self, rows: int, cols: int):
         self.rows = rows
@@ -8,6 +10,9 @@ class Map:
         self.create_empty_map()
         # keep track of obstacle specifics
         self.obstacles = {}  # {(x, y): obstacle_type}
+
+        self.buildings = []  # list of buildings placed on the map
+        self.walkways = []  # list of walkways placed on the map
 
     def create_empty_map(self):
         """
@@ -63,6 +68,7 @@ class Map:
                 if cell.has_type(CELL_TYPES.BUILDING) or cell.has_type(CELL_TYPES.WALKWAY):
                     return False
 
+
         # Actually place the building shape using its specific cells
         for dr, dc in building.cells:
             x, y = x0 + dr, y0 + dc
@@ -81,8 +87,84 @@ class Map:
                         self.remove_cell_type(x, y, CELL_TYPES.GROUND)
                         self.add_cell_type(x, y, CELL_TYPES.WALKWAY)
 
+        building.top_left_x = x0
+        building.top_left_y = y0
+        # Store the building for later reference
+        self.buildings.append(building)
+
+        return True
+
+    def connect_sidewalks(self):
+        """
+        Ensures all WALKWAY cells form a single connected network by linking
+        disjoint walkway groups with L-shaped connectors.
+        """
+        # collect all walkway positions
+        walk_cells = {
+            (r, c)
+            for r in range(self.rows)
+            for c in range(self.cols)
+            if self.get_cell(r, c).has_type(CELL_TYPES.WALKWAY)
+        }
+        if not walk_cells:
+            return
+
+        # neighbors for 4-connectivity
+        def neighbors(pos):
+            r, c = pos
+            for dr, dc in ((1,0),(-1,0),(0,1),(0,-1)):
+                nr, nc = r + dr, c + dc
+                if 0 <= nr < self.rows and 0 <= nc < self.cols:
+                    yield (nr, nc)
+
+        # flood-fill to find connected components
+        comps = []
+        seen = set()
+        for start in walk_cells:
+            if start in seen:
+                continue
+            comp = {start}
+            stack = [start]
+            seen.add(start)
+            while stack:
+                cell = stack.pop()
+                for nb in neighbors(cell):
+                    if nb in walk_cells and nb not in seen:
+                        seen.add(nb)
+                        comp.add(nb)
+                        stack.append(nb)
+            comps.append(comp)
+
+        # pick the component closest to the map center as the main one
+        cx, cy = self.rows // 2, self.cols // 2
+        nearest = min(walk_cells, key=lambda p: abs(p[0]-cx) + abs(p[1]-cy))
+        main = next(comp for comp in comps if nearest in comp)
+
+        # connect other components back to main via random L-shaped paths
+        for comp in comps:
+            if comp is main:
+                continue
+            # choose random endpoints
+            r1, c1 = random.choice(tuple(comp))
+            r0, c0 = random.choice(tuple(main))
+
+            # horizontal segment at row=r1
+            for cc in range(min(c1, c0), max(c1, c0) + 1):
+                cell = self.get_cell(r1, cc)
+                if cell.has_type(CELL_TYPES.GROUND):
+                    self.remove_cell_type(r1, cc, CELL_TYPES.GROUND)
+                    self.add_cell_type(r1, cc, CELL_TYPES.WALKWAY)
+            # vertical segment at col=c0
+            for rr in range(min(r1, r0), max(r1, r0) + 1):
+                cell = self.get_cell(rr, c0)
+                if cell.has_type(CELL_TYPES.GROUND):
+                    self.remove_cell_type(rr, c0, CELL_TYPES.GROUND)
+                    self.add_cell_type(rr, c0, CELL_TYPES.WALKWAY)
+
+            # merge component into main
+            main |= comp
+
     
-        
     
     def __repr__(self):
         # build 2D list of initials

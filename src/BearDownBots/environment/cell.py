@@ -18,7 +18,7 @@ class CustomCellTypeEnum(Enum):
 
     
 class CELL_TYPES(CustomCellTypeEnum):
-    GROUND     = (0, "#006400")   # dark green
+    GROUND     = (0, "#c1e8c2")   # dark green
     BUILDING   = (1, "#A0522D")   # sienna
     WALKWAY    = (2, "#555555")   # dark gray
     OBSTACLE   = (3, "#8B0000")   # dark red

@@ -1,10 +1,11 @@
 # # src/BearDownBots/__init__.py
 
-# from BearDownBots.gui import BearDownBotsApp
-# from BearDownBots.app_context import set_app
-# from BearDownBots.environment.campus import Campus
-# from BearDownBots.environment.sidewalks import Sidewalks
-# from BearDownBots.environment.obstacles import ObstacleField
+from BearDownBots.app import BearDownBotsApp
+
+def main():
+    app = BearDownBotsApp()
+
+    app.setup()
 
 
 # def main():

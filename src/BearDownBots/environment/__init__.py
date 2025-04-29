@@ -20,11 +20,9 @@ def create_campus_environment() -> Map:
     campus_map = Map(Config.Environment.MAP_ROWS, Config.Environment.MAP_COLS)
     # Add any additional features or obstacles to the map here
 
-    print("Campus environment created with dimensions:", campus_map.rows, "x", campus_map.cols)
-    print(campus_map)  # This will call the __repr__ method of the Map class
+    # print("Campus environment created with dimensions:", campus_map.rows, "x", campus_map.cols)
 
     randomly_place_buildings_onto_map(campus_map)
 
-    print(campus_map)
 
     return campus_map

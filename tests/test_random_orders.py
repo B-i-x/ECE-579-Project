@@ -9,14 +9,15 @@ from BearDownBots.config import Config
 
 SIM_MINUTES_TO_RUN = 5  # how long you want to observe
 TIME_SCALE = 1  # 1 real-sec = 120 sim-sec  (2 sim-min)
+# real-interval  =  interval_sim_sec  /  time_scale     (seconds)
 # quick test sizes
-Config.Environment.MAP_ROWS              = 100
-Config.Environment.MAP_COLS              = 100
+Config.Environment.MAP_ROWS = 100
+Config.Environment.MAP_COLS = 100
 Config.Environment.MAX_BUILDING_ATTEMPTS = 40
 
 # make buildings small enough to fit on the tiny map
-Config.Environment.MIN_BUILDING_CELLS    = 25
-Config.Environment.MAX_BUILDING_CELLS    = 81
+Config.Environment.MIN_BUILDING_CELLS = 25
+Config.Environment.MAX_BUILDING_CELLS = 81
 
 
 def main() -> None:

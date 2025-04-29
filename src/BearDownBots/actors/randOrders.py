@@ -25,22 +25,20 @@ class Order:
     def _choose_sides(self) -> List[str]:
         """Randomly choose 0 to 2 distinct sides."""
         num_sides = random.randint(0, 2)
-        print(f"[DEBUG] Number of sides to choose: {num_sides}")
         choices = random.sample(Menu.sides, k=num_sides)
         print(f"[DEBUG] Chosen sides: {choices}")
         return choices
     
     def _choose_drink(self) -> str:
         """Randomly choose 0 to 1 drinks."""
-        num_sides = random.randint(0, 1)
-        print(f"[DEBUG] Drink number selected: {num_sides}")
-        choice = random.sample(Menu.drink, k=num_sides)
+        choice = random.choice(Menu.drink)
         print(f"[DEBUG] Chosen drink: {choice}")
         return choice
 
     def __str__(self) -> str:
         sides_str = ", ".join(self.sides) if self.sides else "No sides"
-        return f"Main: {self.main} | Sides: {sides_str}"
+        drink_str = "".join(self.drink) if self.drink else "No drink"
+        return f"Main: {self.main} | Sides: {sides_str} | Drink: {drink_str}"
 
 
 class OrderGenerator:

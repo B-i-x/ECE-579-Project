@@ -62,7 +62,7 @@ def create_campus_environment(progress_window: ProgressWindow | None) -> Map:
     scheduler = RandomOrderScheduler(
         buildings=campus_map.buildings,  # list of Building objects you just created
         order_placer=restaurant,  # it has .place_order()
-        interval_sim_sec=60  # 1 sim-min; change if desired
+        interval_sim_sec=30  # 1 sim-min; change if desired
     )
     # expose them so higher-level code can reach them later
     campus_map.restaurant = restaurant

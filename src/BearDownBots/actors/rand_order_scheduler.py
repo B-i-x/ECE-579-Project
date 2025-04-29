@@ -13,10 +13,10 @@ class RandomOrderScheduler:
                  order_placer,                 # object with .place_order(building, order)
                  interval_sim_sec: float = 600 # 10 sim-minutes
                  ):
-        self.buildings         = list(buildings)
-        self.order_placer      = order_placer
-        self.interval          = interval_sim_sec
-        self._accumulator      = 0.0           # counts sim-seconds since last order
+        self.buildings = list(buildings)
+        self.order_placer = order_placer
+        self.interval = interval_sim_sec
+        self._accumulator = 0.0           # counts sim-seconds since last order
 
     # ------------------------------------------------------------------ helpers
     def _pick_building(self):

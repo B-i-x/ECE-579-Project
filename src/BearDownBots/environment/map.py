@@ -1,4 +1,5 @@
 from BearDownBots.environment.cell import Cell, CELL_TYPES
+from BearDownBots.environment.buildings import Building
 
 class Map:
     def __init__(self, rows: int, cols: int):
@@ -40,35 +41,48 @@ class Map:
         cell = self.get_cell(x, y)
         cell.remove_type(cell_type)
 
-    def attempt_to_place_building(self, top_left: tuple[int, int], outline: tuple[int, int]) -> bool:
+    def attempt_to_place_building(self, top_left: tuple[int, int], building: Building) -> bool:
         """
-        Attempt to place a rectangular building of size (height, width) defined by outline
-        at the given top_left coordinate (x0, y0).
-        Checks if any cell in the rectangle already has BUILDING type; if so, returns False.
-        On success, replaces GROUND with BUILDING in that rectangle and returns True.
+        Attempt to place the given building onto the map at the given top_left coordinate.
+        Checks conflicts within the building's bounding box (outline),
+        and places cells according to the building's defined cells if successful.
+        Adds sidewalks (WALKWAY) around the building.
         """
         x0, y0 = top_left
-        height, width = outline
+        height, width = building.h, building.w
 
-        # Bounds check for the entire rectangle
+        # Bounds check for the outline (bounding box)
         if x0 < 0 or y0 < 0 or x0 + height > self.rows or y0 + width > self.cols:
             return False
 
-        # Check for conflicts
-        for dx in range(height):
-            for dy in range(width):
-                cell = self.get_cell(x0 + dx, y0 + dy)
-                if cell.has_type(CELL_TYPES.BUILDING):
-                    return False
-
-        # Place the building
+        # Conflict check within the bounding box
         for dx in range(height):
             for dy in range(width):
                 x, y = x0 + dx, y0 + dy
+                cell = self.get_cell(x, y)
+                if cell.has_type(CELL_TYPES.BUILDING) or cell.has_type(CELL_TYPES.WALKWAY):
+                    return False
+
+        # Actually place the building shape using its specific cells
+        for dr, dc in building.cells:
+            x, y = x0 + dr, y0 + dc
+            if 0 <= x < self.rows and 0 <= y < self.cols:
                 self.remove_cell_type(x, y, CELL_TYPES.GROUND)
                 self.add_cell_type(x, y, CELL_TYPES.BUILDING)
 
-        return True
+        # Place sidewalks around the building's actual cells
+        for dr, dc in building.cells:
+            for adj in [(-1, 0), (1, 0), (0, -1), (0, 1)]:  # up, down, left, right
+                adj_r, adj_c = dr + adj[0], dc + adj[1]
+                x, y = x0 + adj_r, y0 + adj_c
+                if 0 <= x < self.rows and 0 <= y < self.cols:
+                    cell = self.get_cell(x, y)
+                    if cell.has_type(CELL_TYPES.GROUND):
+                        self.remove_cell_type(x, y, CELL_TYPES.GROUND)
+                        self.add_cell_type(x, y, CELL_TYPES.WALKWAY)
+
+    
+        
     
     def __repr__(self):
         # build 2D list of initials

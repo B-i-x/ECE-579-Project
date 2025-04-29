@@ -1,36 +1,7 @@
 # src/BearDownBots/environment/buildings.py
 import random
-from BearDownBots.environment.cell import CELL_TYPES
-from BearDownBots.environment.map import Map
-from BearDownBots.config import Config
 
-
-def randomly_place_buildings_onto_map(campus_map: Map) -> bool:
-    """
-    Attempt to place a random building on the map.
-    Returns True if any placement succeeds within the configured attempts.
-    """
-
-    choices = list(Building.__subclasses__())
-    weights = [cls.likelihood for cls in choices]
-
-    for _ in range(Config.Environment.MAX_BUILDING_ATTEMPTS):
-        x = random.randint(0, campus_map.rows - 1)
-        y = random.randint(0, campus_map.cols - 1)
-
-        cls = random.choices(choices, weights=weights, k=1)[0]
-        bld = cls.generate(
-            Config.Environment.MIN_BUILDING_CELLS,
-            Config.Environment.MAX_BUILDING_CELLS
-        )
-
-        attempt = campus_map.attempt_to_place_building((x, y), (bld.h, bld.w))
-        if attempt:
-            print(f"Placed {bld} at ({x}, {y})")
-        else:
-            print(f"Failed to place {bld} at ({x}, {y})")
     
-
 class Building:
     """Base class for all building types."""
     likelihood: float = 1.0  # default selection weight

@@ -1,13 +1,17 @@
 import tkinter as tk
-from math import floor
 from PIL import Image, ImageDraw, ImageTk
 
 from BearDownBots.config import Config
 from BearDownBots.environment.cell import CELL_TYPES
 from BearDownBots.environment.map import Map
+from BearDownBots.render.loading import ProgressWindow
 
 class CampusRenderer:
-    def __init__(self, parent, campus_map: Map):
+    def __init__(self, parent, campus_map: Map, progress_window: ProgressWindow = None):
+        """
+        Initialize the CampusRenderer with a parent widget and a campus map.
+        """
+        self.progress_window = progress_window
         self.campus_map = campus_map
         self.parent = parent
         self.offset = (0, 0)
@@ -48,6 +52,10 @@ class CampusRenderer:
         img_h = rows * self.base_px
         img = Image.new('RGB', (img_w, img_h), CELL_TYPES.GROUND.color)
         draw = ImageDraw.Draw(img)
+
+        self.progress_window.start_phase("Rendering Campus", rows)
+
+        step = 0
         for i in range(rows):
             for j in range(cols):
                 cell = self.campus_map.get_cell(i, j)
@@ -58,6 +66,13 @@ class CampusRenderer:
                         break
                 x0, y0 = j*self.base_px, i*self.base_px
                 draw.rectangle([x0, y0, x0+self.base_px, y0+self.base_px], fill=color)
+
+
+                
+            if i % 5 == 0:
+                self.progress_window.update_progress(i)
+
+
         return img
 
     def _on_mouse_down(self, event):

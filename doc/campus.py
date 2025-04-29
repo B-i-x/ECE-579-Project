@@ -3,9 +3,8 @@ import os
 
 from PIL import Image, ImageTk
 
-class BearDownBotsApp(tk.Tk):
-    def __init__(self, width, height):
-        super().__init__()
+class BearDownBotsApp():
+    def __init__(self):
         self.title("Bear Down Bots Simulator")
         self.geometry(f"{width}x{height}")
 

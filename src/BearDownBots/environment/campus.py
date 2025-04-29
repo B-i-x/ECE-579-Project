@@ -9,7 +9,7 @@ from BearDownBots.environment.buildings import (
     HollowSquareBuilding,
     TrapezoidBuilding,
 )
-from BearDownBots.environment.randOrders import OrderGenerator 
+from BearDownBots.actors.randOrders import OrderGenerator
 
 SHAPE_CLASSES = {
     "rectangle":       RectangleBuilding,
@@ -24,6 +24,50 @@ colors = {
     "walkway":  "#808080",
     "obstacle": "#B22222",   # ← deep red for clarity
 }
+
+# ------------------------------------------------------------------
+#  Campus‑flavoured building names  (60 unique entries)
+# ------------------------------------------------------------------
+CAMPUS_NAMES = [
+    # academic halls
+    "Physics Hall", "Chemistry Hall", "Biology Hall", "Mathematics Hall",
+    "Computer Science Center", "Engineering Annex", "Civil Engineering Lab",
+    "Aerospace Research Wing", "Optics Institute", "Robotics Center",
+    "Environmental Sciences", "Neuroscience Pavilion",
+    "Humanities Hall", "Philosophy House", "History Hall",
+    "Language Arts Building", "Journalism Center", "Music Conservatory",
+    "Art & Design Studio", "Theatre Arts Complex",
+
+    # lecture and event venues
+    "Centennial Auditorium", "Heritage Theatre", "Innovation Forum",
+    "Discovery Lecture Hall", "Founders Conference Center",
+
+    # libraries & study
+    "Main Library", "Science Library", "Law Library",
+
+    # student life & admin
+    "Student Union", "Campus Bookstore", "Career Services",
+    "Health Services", "Recreation Center", "Financial Aid Office",
+    "Admissions Hall", "International Programs", "Alumni House",
+    "Campus Police Headquarters",
+
+    # dorms & apartments
+    "Ocotillo Dorm", "Saguaro Hall", "Agave Suites",
+    "Bear Creek Apartments", "Cactus Court", "Desert Vista Hall",
+    "Mesa Residence", "Rincon Suites", "Catalina Complex",
+
+    # dining & retail (non‑restaurant bldg)
+    "Coffee Commons", "Campus Market", "Print & Copy Center",
+
+    # athletics
+    "Bear Down Gym", "Track & Field House", "Aquatics Center",
+    "Stadium Offices", "Athletic Training Facility",
+
+    # research parks / misc
+    "Innovation Hub", "Technology Incubator", "Sustainability Center",
+    "Data Science Lab", "Cybersecurity Institute"
+]
+
 
 class Campus:
     """
@@ -55,7 +99,7 @@ class Campus:
         b_min_ft: int = 250,
         b_max_ft: int = 500,
         num_attempts: int = 200,
-        hollow_thickness: int = 10,   
+        hollow_thickness: int = 10,
 
         shape_probabilities: dict = None
     ):
@@ -100,6 +144,9 @@ class Campus:
         )
 
         self.restaurant_bldg = self.buildings[0]
+        self.restaurant_bldg["name"] = "Bear Down Express"
+
+        self._assign_building_names()
 
         self.restaurant_coords = set(
             (self.restaurant_bldg["r0"] + dr,
@@ -110,9 +157,11 @@ class Campus:
         # Fill & draw
         self._fill_grid()
         self._draw_map()
+        self._assign_entry_points()
 
 
     def _place_buildings(self, attempts, min_cells, max_cells):
+        next_id = 1
         for _ in range(attempts):
             kind = random.choices(self.shapes, weights=self.weights, k=1)[0]
             cls  = SHAPE_CLASSES[kind]
@@ -144,8 +193,39 @@ class Campus:
                     break
 
             if not conflict:
-                self.buildings.append({"cells": cells, "r0": r0, "c0": c0, "h": h, "w": w})
+                self.buildings.append({"id":   next_id, "cells": cells, "r0": r0, "c0": c0, "h": h, "w": w, "kind": kind})
+                next_id += 1
 
+    def _assign_building_names(self):
+        """
+        Randomly assign each NON‑restaurant building a unique name from the
+        CAMPUS_NAMES list.  We assert that the pool is big enough.
+        """
+        import random
+
+        pool_needed = len(self.buildings) - 1  # minus restaurant
+        assert pool_needed <= len(CAMPUS_NAMES), (
+            f"Need {pool_needed} unique names but only "
+            f"{len(CAMPUS_NAMES)} provided.  Please add more."
+        )
+
+        # shuffle once, then iterate
+        shuffled = random.sample(CAMPUS_NAMES, pool_needed)
+        name_iter = iter(shuffled)
+
+        for b in self.buildings:
+            if b is self.restaurant_bldg:
+                b["name"] = "Bear Down Express"
+            else:
+                b["name"] = next(name_iter)
+
+
+    def get_building_by_id(self, bid: int):
+        """Return the building dict with matching id (or None)."""
+        for b in self.buildings:
+            if b["id"] == bid:
+                return b
+        return None
 
     def _make_shape(self, kind, min_c, max_c):
         """
@@ -254,7 +334,7 @@ class Campus:
 
         self._connect_sidewalks()
 
-    
+
     def _connect_sidewalks(self):
         # gather all walkway coordinates
         walk_cells = {(r,c)
@@ -315,30 +395,139 @@ class Campus:
             # merge them so further comps attach to unified main_comp
             main_comp |= comp
 
+    def _assign_entry_points(self):
+        """
+        After sidewalks are finished, choose one walkway cell touching each
+        building as the external entry.  Also mark the adjacent *internal*
+        building cell so it shows up in a different color.
+        """
+        dirs4 = ((1, 0), (-1, 0), (0, 1), (0, -1))
+        cs = self.cell_size  # pixel size for drawing
+
+        for b in self.buildings:
+            r0, c0, h, w = b["r0"], b["c0"], b["h"], b["w"]
+            kind = b.get("kind", "")
+
+            # ---------- ❶ collect candidate walkway cells ----------
+            candidates = []
+            for dr, dc in b["cells"]:
+                r, c = r0 + dr, c0 + dc
+                for ddr, ddc in dirs4:
+                    nr, nc = r + ddr, c + ddc
+                    if (0 <= nr < self.rows) and (0 <= nc < self.cols):
+                        if isinstance(self.grid.get_cell(nr, nc), WalkwayCell):
+                            candidates.append((nr, nc))
+
+            if kind == "hollow_square":
+                candidates = [p for p in candidates
+                              if not (r0 <= p[0] < r0 + h and
+                                      c0 <= p[1] < c0 + w)]
+                # ‑‑ explanation ‑‑
+                # inner‑ring walkway sits strictly *inside* [r0,r0+h)×[c0,c0+w)
+                # so removing those points leaves only the outside ring
+
+            # ---------- ❷ pick / carve a door if none exist ----------
+            if candidates:
+                entry_out = random.choice(candidates)
+            else:  # rare: carve one
+                # pick random perimeter building cell and convert the
+                # neighbour into a walkway.
+                br, bc = r0 + random.choice(b["cells"])
+                for ddr, ddc in dirs4:
+                    nr, nc = br + ddr, bc + ddc
+                    if (0 <= nr < self.rows) and (0 <= nc < self.cols):
+                        if self.grid.get_cell(nr, nc).type == "ground":
+                            self.grid.set_cell(nr, nc, WalkwayCell(nr, nc))
+                            entry_out = (nr, nc)
+                            break
+                else:
+                    entry_out = None  # should never happen
+
+            # ---------- ❸ locate the *inside* cell ----------
+            entry_in = None
+            if entry_out:
+                wr, wc = entry_out
+                for ddr, ddc in dirs4:
+                    nr, nc = wr + ddr, wc + ddc
+                    if (0 <= nr < self.rows) and (0 <= nc < self.cols):
+                        if isinstance(self.grid.get_cell(nr, nc),
+                                      (BuildingCell, RestaurantCell)):
+                            entry_in = (nr, nc)
+                            break
+
+            # ---------- ❹ save & draw ----------
+            b["entry"] = entry_out  # external door tile
+            b["entry_inside"] = entry_in  # internal door tile
+
+            # draw outside (purple)
+            if entry_out:
+                x, y = entry_out[1] * cs, entry_out[0] * cs
+                self.canvas.create_rectangle(
+                    x, y, x + cs, y + cs,
+                    fill="#A020F0", outline="", width=0
+                )
+            # draw inside (purple)
+            if entry_in:
+                x, y = entry_in[1] * cs, entry_in[0] * cs
+                self.canvas.create_rectangle(
+                    x, y, x + cs, y + cs,
+                    fill="#A020F0", outline="", width=0
+                )
+
     def _draw_map(self):
         """
-        Draw each cell by querying its .type
+        First paint every cell; then overlay one text label per building so
+        the rectangles underneath can’t cover it.
         """
+        cs = self.cell_size
         colors = {
             "ground": "#DFFFD0",
             "building": "#D2B48C",
             "restaurant": "#FFB347",
-            "walkway":  "#808080",  # gray sidewalks
+            "walkway": "#808080",
             "obstacle": "#B22222",
         }
+
+        # ---------- PASS 1: rectangles ----------
         for r in range(self.rows):
+            y1 = r * cs
+            y2 = y1 + cs
             for c in range(self.cols):
-                cell = self.grid.get_cell(r, c)
-                fill = colors[cell.type]
-                x1 = c * self.cell_size
-                y1 = r * self.cell_size
-                x2 = x1 + self.cell_size
-                y2 = y1 + self.cell_size
-                self.canvas.create_rectangle(
-                    x1, y1, x2, y2,
-                    fill=fill,
-                    outline="", width=0
-                )
+                x1 = c * cs
+                x2 = x1 + cs
+                fill = colors[self.grid.get_cell(r, c).type]
+                self.canvas.create_rectangle(x1, y1, x2, y2,
+                                             fill=fill, outline="", width=0)
+
+        # ---------- PASS 2: labels ----------
+        self._label_buildings()
+
+    def _label_buildings(self):
+        """
+        Write either the numeric ID or a custom name at the pixel centre of
+        each building so it never gets obscured.
+        """
+        cs = self.cell_size
+        for b in self.buildings:
+            # pixel centre of bounding box
+            cx = (b["c0"] + b["w"] / 2) * cs
+            cy = (b["r0"] + b["h"] / 2) * cs
+
+            # use custom name if present (restaurant), else the numeric id
+            label = b.get("name", str(b["id"]))
+
+            # pick a font size that remains legible but fits small buildings
+            #   ~ one character ≈ 6‑7 px wide; shrink for tiny buildings
+            max_char_w = b["w"] * cs / max(len(label), 1)
+            font_size = max(6, int(max_char_w * 0.75))
+
+            self.canvas.create_text(
+                cx, cy,
+                text=label,
+                fill="black",
+                font=("Arial", font_size),
+                anchor="center"
+            )
 
 
     def highlight_cell(self, r:int, c:int, color:str="yellow"):
@@ -361,4 +550,4 @@ class Campus:
         # 2) generate one random order
         order = OrderGenerator(num_orders=1).generate_orders()[0]
         return b, order
-            
+

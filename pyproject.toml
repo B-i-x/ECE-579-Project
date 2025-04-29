@@ -7,7 +7,7 @@ authors = [
     ]
 license = "MIT"
 readme = "README.md"
-keywords = ["robotics", "automation", "ECE-579"]
+keywords = ["University of Arizona", "Artificial Intelligence", "ECE-579"]
 
 # runtime dependencies
 dependencies = [
@@ -16,6 +16,10 @@ dependencies = [
   # tkinter is part of the standard library; on Debian/Ubuntu:
   #   sudo apt install python3-tk
 ]
+
+[tool.setuptools.package-data]
+"BearDownBots" = ["config.toml"]
+
 
 [build-system]
 # A list of packages that are needed to build your package:
@@ -26,4 +30,6 @@ build-backend = "setuptools.build_meta" # If not defined, then legacy behavior c
 # console‐script entry point; adjust target if your main() lives in a different module
 [project.scripts]
 run = "BearDownBots:main"
+run-fast = "BearDownBots:fast"
+create_campus = "BearDownBots.environment.__init__:create_campus_environment"
 

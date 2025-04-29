@@ -47,6 +47,8 @@ def create_campus_environment(progress_window: ProgressWindow) -> Map:
 
     campus_map.create_food_warehouse()
 
+    campus_map.add_obstacles_randomly()
+
 
     
 

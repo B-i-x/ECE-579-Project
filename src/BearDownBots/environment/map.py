@@ -1,5 +1,6 @@
-from BearDownBots.environment.cell import Cell, CELL_TYPES
+from BearDownBots.environment.cell import Cell, CELL_TYPES, OBSTACLE_TYPES
 from BearDownBots.environment.buildings import Building
+from BearDownBots.config import Config
 
 import random
 
@@ -178,10 +179,39 @@ class Map:
             cell.remove_type(CELL_TYPES.BUILDING)
             cell.add_type(CELL_TYPES.RESTAURANT)
 
-    def add_obstacles_randomly(self):
+    def add_obstacles_randomly(self) -> None:
         """
-        This function will add obstacles randomly to the map along the walkways. max amount of obstacles added is 5% of the total walkway cells.
+        Sprinkle obstacles on up to `percent` of all walkway cells.
+
+        percent: fraction of walkway cells to convert (default 0.05).
         """
+
+        # 1) gather eligible walkway coords
+        walkway_cells = []
+        for r in range(self.rows):
+            for c in range(self.cols):
+                cell = self.get_cell(r, c)
+                if cell.has_type(CELL_TYPES.WALKWAY):
+                    walkway_cells.append((r, c))
+
+        if not walkway_cells:
+            return
+
+        percent = Config.Environment.OBSTACLES_AS_PERCENTAGE_OF_WALKWAYS
+        # 2) how many obstacles?
+        n = max(1, int(len(walkway_cells) * percent))
+        print(f"Adding {n} obstacles to the map.")
+        
+        # 3) pick unique random cells
+        chosen = random.sample(walkway_cells, n)
+
+        
+        # 4) mark them obstacle in both grid and obstacle registry
+        for r, c in chosen:
+            # layer on the OBSTACLE type
+            self.add_cell_type(r, c, CELL_TYPES.OBSTACLE)
+            # record specifics
+
 
 
     def __repr__(self):

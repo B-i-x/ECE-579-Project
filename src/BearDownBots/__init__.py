@@ -5,8 +5,6 @@ from BearDownBots.config import Config
 def main():
     app = BearDownBotsApp()
 
-    app.run()
-
 def fast():
     """
     Fast mode for running the application without GUI.

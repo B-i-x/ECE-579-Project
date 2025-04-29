@@ -6,7 +6,7 @@ class Menu:
     """Holds the available items on the menu."""
     mains = ["Burger", "Pizza", "Salad"]
     sides = ["Fries", "Onion Rings", "Coleslaw", "Side Salad", "Mozzarella Sticks"]
-    drink = ["Soda, Lemonade, Sweet Tea, Water"]
+    drink = ["Soda", "Lemonade", "Sweet Tea", "Water"]
 
 
 class Order:

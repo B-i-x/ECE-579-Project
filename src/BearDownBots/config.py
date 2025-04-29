@@ -1,7 +1,8 @@
 # src/BearDownBots/config.py
 
 class Config:
-
+    TIME_SCALE = 1 ## time scale for the simulation (1 = real time, 2 = twice as fast, etc.)
+    
     class GUI:
         # general
         WINDOW_WIDTH_PIXELS  = 800 ## width of the window in pixels

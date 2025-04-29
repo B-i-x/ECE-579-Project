@@ -16,7 +16,6 @@ class GuiWrapper(tk.Tk):
         super().__init__()
         self.withdraw()
 
-
     def setup(self):
          # --- Main window title & size ---
         width = Config.GUI.WINDOW_WIDTH_PIXELS
@@ -44,4 +43,11 @@ class GuiWrapper(tk.Tk):
         Render the campus map using CampusRenderer.
         """
         self.renderer = CampusRenderer(self.content_paned, campus_map, progress_window)
+
+    def show_main_screen(self):
+        """
+        Show the main screen of the GUI.
+        """
+        self.deiconify()
+        self.mainloop()
 

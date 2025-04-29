@@ -7,7 +7,7 @@ def main():
 
 def fast():
     """
-    Fast mode for running the application without GUI.
+    Fast mode
     """
     Config.Environment.MAP_ROWS = 500
     Config.Environment.MAP_COLS = 500

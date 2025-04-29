@@ -9,12 +9,13 @@ from BearDownBots.environment.cell import CELL_TYPES
 from BearDownBots.render.loading import ProgressWindow
 
 
-def create_campus_environment(progress_window: ProgressWindow) -> Map:
+def create_campus_environment(progress_window: ProgressWindow | None) -> Map:
     """
     Create a campus environment with the specified number of rows and columns.
     """
     # Initialize the progress window
-    progress_window.start_phase("Creating Campus", Config.Environment.MAX_BUILDING_ATTEMPTS)
+    if progress_window is not None:
+        progress_window.start_phase("Creating Campus", Config.Environment.MAX_BUILDING_ATTEMPTS)
 
     campus_map = Map(Config.Environment.MAP_ROWS, Config.Environment.MAP_COLS)
 
@@ -41,15 +42,14 @@ def create_campus_environment(progress_window: ProgressWindow) -> Map:
         # else:
         #     print(f"Failed to place {bld} at ({x}, {y})")
 
-        progress_window.update_progress(i)
+        if progress_window is not None:
+
+            progress_window.update_progress(i)
 
     campus_map.connect_sidewalks()
 
     campus_map.create_food_warehouse()
 
-    campus_map.add_obstacles_randomly()
-
-
-    
+    campus_map.add_obstacles_randomly()    
 
     return campus_map

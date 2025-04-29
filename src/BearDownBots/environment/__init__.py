@@ -17,11 +17,7 @@ def create_campus_environment(progress_window: ProgressWindow) -> Map:
     progress_window.start_phase("Creating Campus", Config.Environment.MAX_BUILDING_ATTEMPTS)
 
     campus_map = Map(Config.Environment.MAP_ROWS, Config.Environment.MAP_COLS)
-    # Add any additional features or obstacles to the map here
 
-    # print("Campus environment created with dimensions:", campus_map.rows, "x", campus_map.cols)
-
-    # randomly_place_buildings_onto_map(campus_map)
     choices = list(Building.__subclasses__())
     weights = [cls.likelihood for cls in choices]
 

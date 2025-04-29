@@ -14,7 +14,6 @@ class BearDownBotsApp():
         self.environment = create_campus_environment()
         self.renderer = GuiWrapper(self.environment)
 
-        self.renderer.render_campus()
 
         
         self.renderer.mainloop()

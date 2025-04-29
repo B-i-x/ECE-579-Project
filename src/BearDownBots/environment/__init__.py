@@ -36,10 +36,10 @@ def create_campus_environment(progress_window: ProgressWindow) -> Map:
         )
 
         attempt = campus_map.attempt_to_place_building((x, y), bld)
-        if attempt:
-            print(f"Placed {bld} at ({x}, {y})")
-        else:
-            print(f"Failed to place {bld} at ({x}, {y})")
+        # if attempt:
+        #     print(f"Placed {bld} at ({x}, {y})")
+        # else:
+        #     print(f"Failed to place {bld} at ({x}, {y})")
 
         progress_window.update_progress(i)
 

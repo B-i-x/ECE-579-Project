@@ -178,8 +178,12 @@ class Map:
             cell.remove_type(CELL_TYPES.BUILDING)
             cell.add_type(CELL_TYPES.RESTAURANT)
 
-    
-    
+    def add_obstacles_randomly(self):
+        """
+        This function will add obstacles randomly to the map along the walkways. max amount of obstacles added is 5% of the total walkway cells.
+        """
+
+
     def __repr__(self):
         # build 2D list of initials
         rows_letters = []

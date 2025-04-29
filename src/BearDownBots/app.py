@@ -10,7 +10,6 @@ class BearDownBotsApp():
         self.environment = None  # Placeholder for the environment object
         self.renderer = None  # Placeholder for the renderer object
 
-
         self.renderer = GuiWrapper()
 
         self.progress_window = ProgressWindow(self.renderer)

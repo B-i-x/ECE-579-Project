@@ -4,8 +4,8 @@ from BearDownBots.environment.map import Map
 from BearDownBots.config import Config
 from BearDownBots.environment.buildings import Building
 from BearDownBots.environment.cell import CELL_TYPES
-
-
+from BearDownBots.actors.rand_order_scheduler import RandomOrderScheduler
+from BearDownBots.actors.restaurant import Restaurant
 from BearDownBots.render.loading import ProgressWindow
 
 
@@ -43,13 +43,29 @@ def create_campus_environment(progress_window: ProgressWindow | None) -> Map:
         #     print(f"Failed to place {bld} at ({x}, {y})")
 
         if progress_window is not None:
-
             progress_window.update_progress(i)
 
     campus_map.connect_sidewalks()
 
     campus_map.create_food_warehouse()
 
-    campus_map.add_obstacles_randomly()    
+    campus_map.add_obstacles_randomly()
+    # -----------------------------------------------------------------
+    #  Random-order generation plumbing
+    # -----------------------------------------------------------------
+    restaurant = Restaurant()  # queue that will collect orders
+    if not campus_map.buildings:
+        raise RuntimeError(
+            "No buildings were placed on the map; adjust Config parameters "
+            "before starting the RandomOrderScheduler."
+        )
+    scheduler = RandomOrderScheduler(
+        buildings=campus_map.buildings,  # list of Building objects you just created
+        order_placer=restaurant,  # it has .place_order()
+        interval_sim_sec=60  # 1 sim-min; change if desired
+    )
+    # expose them so higher-level code can reach them later
+    campus_map.restaurant = restaurant
+    campus_map.order_scheduler = scheduler
 
     return campus_map

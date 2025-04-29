@@ -1,3 +1,10 @@
+from __future__ import annotations          # <-- add once at top of file
+from typing import Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:                           # forward-refs to avoid circular import at runtime
+    from BearDownBots.actors.restaurant import Restaurant
+    from BearDownBots.actors.rand_order_scheduler import RandomOrderScheduler
+
 from BearDownBots.environment.cell import Cell, CELL_TYPES, OBSTACLE_TYPES
 from BearDownBots.environment.buildings import Building
 from BearDownBots.config import Config
@@ -14,6 +21,9 @@ class Map:
 
         self.buildings = []  # list of buildings placed on the map
         self.walkways = []  # list of walkways placed on the map
+
+        self.restaurant: Optional['Restaurant'] = None
+        self.order_scheduler: Optional['RandomOrderScheduler'] = None
 
     def create_empty_map(self):
         """
@@ -212,7 +222,15 @@ class Map:
             self.add_cell_type(r, c, CELL_TYPES.OBSTACLE)
             # record specifics
 
-
+    # ────────────────────────────────────────────────────────────────
+    def update(self, dt: float) -> None:
+        """
+        Advance the simulation state by `dt` seconds of **simulation time**.
+        For now this just forwards the tick to the RandomOrderScheduler,
+        but you can grow it later to move robots, handle collisions, etc.
+        """
+        if self.order_scheduler:
+            self.order_scheduler.update(dt)
 
     def __repr__(self):
         # build 2D list of initials

@@ -1,6 +1,7 @@
 # src/BearDownBots/environment/buildings.py
 import random
 import uuid
+import math
 
     
 class Building:
@@ -72,23 +73,51 @@ class SquareBuilding(Building):
     likelihood = 0.8
 
     def __init__(self, min_cells: int, max_cells: int):
-        side = random.randint(min_cells, max_cells)
+        # convert cell counts → side-length bounds
+        min_side = math.ceil(math.sqrt(min_cells))
+        max_side = math.floor(math.sqrt(max_cells))
+        if min_side > max_side:
+            raise ValueError(
+                f"SquareBuilding: need side between {min_side} and {max_side}"
+            )
+
+        side = random.randint(min_side, max_side)
         cells = [(dr, dc) for dr in range(side) for dc in range(side)]
         super().__init__(cells, side, side)
 
 
 class HollowSquareBuilding(Building):
     likelihood = 0.5
-    thickness: int = 30
+    thickness: int = 3
 
-    def __init__(self, min_cells: int, max_cells: int, thickness: int = None):
+    def __init__(
+        self,
+        min_cells: int,
+        max_cells: int,
+        thickness: int | None = None
+    ):
         t = thickness if thickness is not None else type(self).thickness
-        side = random.randint(max(2 * t + 1, min_cells), max_cells)
+
+        # side must be ≥ 2·t+1 for an inner empty area
+        min_side_by_shape = 2 * t + 1
+        min_side_by_area  = math.ceil(math.sqrt(min_cells))
+        max_side          = math.floor(math.sqrt(max_cells))
+
+        min_side = max(min_side_by_shape, min_side_by_area)
+
+        if min_side > max_side:
+            raise ValueError(
+                f"HollowSquareBuilding: no side fits (need ≥{min_side}, ≤{max_side})"
+            )
+
+        side = random.randint(min_side, max_side)
+
         cells = []
         for dr in range(side):
             for dc in range(side):
                 if dr < t or dr >= side - t or dc < t or dc >= side - t:
                     cells.append((dr, dc))
+
         super().__init__(cells, side, side)
 
 

@@ -1,6 +1,6 @@
 # src/BearDownBots/environment/buildings.py
 import random
-from BearDownBots.environment.cell_types import CELL_TYPES
+from BearDownBots.environment.cell import CELL_TYPES
 from BearDownBots.environment.map import Map
 from BearDownBots.config import Config
 

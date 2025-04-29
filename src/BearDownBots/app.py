@@ -6,7 +6,7 @@ class BearDownBotsApp():
         self.environment = None  # Placeholder for the environment object
         self.renderer = None  # Placeholder for the renderer object
     
-    def setup(self):
+    def run(self):
         """
         Setup the application environment and renderer.
         """
@@ -14,6 +14,4 @@ class BearDownBotsApp():
         self.environment = create_campus_environment()
         self.renderer = GuiWrapper(self.environment)
 
-
-        
         self.renderer.mainloop()

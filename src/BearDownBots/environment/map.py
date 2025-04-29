@@ -1,5 +1,4 @@
-from BearDownBots.environment.cell_types import CELL_TYPES
-from BearDownBots.environment.cell import Cell
+from BearDownBots.environment.cell import Cell, CELL_TYPES
 
 class Map:
     def __init__(self, rows: int, cols: int):

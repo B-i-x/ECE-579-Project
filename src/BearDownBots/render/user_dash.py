@@ -2,11 +2,13 @@ import os
 import tkinter as tk
 from PIL import Image, ImageTk
 
+from BearDownBots.config import Config
 
-class DashboardRenderer:
-    def __init__(self, parent_frame: tk.Frame, assets_dir: str):
+
+class UserDashboardRenderer:
+    def __init__(self, parent_frame: tk.Frame):
         self.parent = parent_frame
-        self.assets_dir = assets_dir
+        self.assets_dir = Config.get_asset_dir()
 
     def render(self):
         # Load and resize icons
@@ -29,20 +31,3 @@ class DashboardRenderer:
         )
         self.stop_button.pack(side=tk.LEFT, padx=5)
 
-        # Orders Placed label
-        self.order_count_label = tk.Label(
-            self.parent,
-            text="Orders Placed: 0",
-            bg="lightgrey",
-            font=("Arial", 14)
-        )
-        self.order_count_label.pack(side=tk.LEFT, padx=10, pady=20)
-
-        # Robots Active label
-        self.robot_status_label = tk.Label(
-            self.parent,
-            text="Robots Active: 3",
-            bg="lightgrey",
-            font=("Arial", 14)
-        )
-        self.robot_status_label.pack(side=tk.LEFT, padx=10, pady=20)

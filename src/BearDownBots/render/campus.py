@@ -16,11 +16,21 @@ class CampusRenderer:
         self.parent = parent
         self.offset = (0, 0)
         self._drag_start = None
-        self.zoom = 1.0
-        self.min_zoom = 0.5
-        self.max_zoom = 8.0
+
+        # physical canvas size (pixels)
         self.canvas_w = int(Config.GUI.WINDOW_WIDTH_PIXELS)
         self.canvas_h = int(Config.GUI.WINDOW_HEIGHT_PIXELS)
+        self.offset_x = 0
+        self.offset_y = 0
+
+        # the only place we generate the base‐image at 1px=1cell
+        self._base_image = self._create_base_image()
+        base_w, base_h = self._base_image.size
+        
+        # dynamic zoom limits so we NEVER zoom out below the canvas size
+        self.min_zoom = 0.75
+        self.max_zoom = 8.0
+        self.zoom = 1
 
         # setup canvas
         self.canvas = tk.Canvas(
@@ -29,12 +39,14 @@ class CampusRenderer:
             height=self.canvas_h,
             bg='white'
         )
-        self.parent.add(self.canvas)
+         # pre‐scale once
+        scaled_size      = (int(base_w * self.zoom), int(base_h * self.zoom))
+        self._scaled_image = self._base_image.resize(scaled_size, Image.NEAREST)
+        self._tk_image     = None
 
-        # generate base image once
-        self._base_image = self._create_base_image()
-        self._scaled_image = self._base_image.copy()
-        self._tk_image = None
+        # setup canvas widget
+        self.canvas = tk.Canvas(parent, width=self.canvas_w, height=self.canvas_h, bg='white')
+        parent.add(self.canvas)
 
         # bind events
         self.canvas.bind('<ButtonPress-1>', self._on_mouse_down)
@@ -54,7 +66,6 @@ class CampusRenderer:
 
         self.progress_window.start_phase("Rendering Campus", rows)
 
-        step = 0
         for i in range(rows):
             for j in range(cols):
                 cell = self.campus_map.get_cell(i, j)
@@ -82,21 +93,25 @@ class CampusRenderer:
 
 
     def _on_mouse_down(self, event):
-        self._drag_start = (event.x, event.y, *self.offset)
+        # capture the *current* pixel offset when you start dragging
+        self._drag_start = (event.x, event.y, self.offset_x, self.offset_y)
 
     def _on_mouse_drag(self, event):
-        if not self._drag_start:
+        if not hasattr(self, '_drag_start'):
             return
-        x0, y0, ro, co = self._drag_start
-        dx, dy = event.x - x0, event.y - y0
-        step = self.zoom
-        dro = -int(dy/step)
-        dco = -int(dx/step)
-        max_ro = max(0, self.campus_map.rows - int(self.canvas_h/step))
-        max_co = max(0, self.campus_map.cols - int(self.canvas_w/step))
-        ro_new = min(max_ro, max(0, ro+dro))
-        co_new = min(max_co, max(0, co+dco))
-        self.offset = (ro_new, co_new)
+
+        x0, y0, off_x0, off_y0 = self._drag_start
+        dx = event.x - x0
+        dy = event.y - y0
+
+        # invert so map moves with mouse
+        new_off_x = off_x0 - dx
+        new_off_y = off_y0 - dy
+
+        # no clamping—pan freely
+        self.offset_x = new_off_x
+        self.offset_y = new_off_y
+
         self.render()
 
     def _on_mouse_wheel(self, event):
@@ -116,11 +131,11 @@ class CampusRenderer:
             self.render()
 
     def render(self):
-        step = self.zoom
-        ro, co = self.offset
-        left, top = int(co*step), int(ro*step)
-        right, bottom = left+self.canvas_w, top+self.canvas_h
-        crop = self._scaled_image.crop((left, top, right, bottom))
-        self._tk_image = ImageTk.PhotoImage(crop)
+        # crop the scaled image at pixel offset
+        x0, y0 = int(self.offset_x), int(self.offset_y)
+        x1, y1 = x0 + self.canvas_w, y0 + self.canvas_h
+        view = self._scaled_image.crop((x0, y0, x1, y1))
+        self._tk_image = ImageTk.PhotoImage(view)
+
         self.canvas.delete('all')
-        self.canvas.create_image(0,0,anchor='nw',image=self._tk_image)
+        self.canvas.create_image(0, 0, anchor='nw', image=self._tk_image)

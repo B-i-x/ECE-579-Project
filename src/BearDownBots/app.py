@@ -16,7 +16,7 @@ class BearDownBotsApp():
         self.progress_window = ProgressWindow(self.renderer)
         
         self.setup()
-        self.run()
+        # self.run()
 
     def setup(self):
         """
@@ -41,7 +41,7 @@ class BearDownBotsApp():
 
         while True:
             dt = self.clock.tick()
-            
+
             self.environment.update(self.clock.delta_time)
             self.renderer.update(self.clock.delta_time)
 

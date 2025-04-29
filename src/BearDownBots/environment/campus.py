@@ -9,7 +9,7 @@ from BearDownBots.environment.buildings import (
     HollowSquareBuilding,
     TrapezoidBuilding,
 )
-from BearDownBots.environment.randOrders import OrderGenerator
+from BearDownBots.actors.randOrders import OrderGenerator
 
 SHAPE_CLASSES = {
     "rectangle":       RectangleBuilding,

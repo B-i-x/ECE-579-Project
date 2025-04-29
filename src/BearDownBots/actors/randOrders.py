@@ -4,9 +4,37 @@ from typing import List
 
 class Menu:
     """Holds the available items on the menu."""
-    mains = ["Burger", "Pizza", "Salad"]
-    sides = ["Fries", "Onion Rings", "Coleslaw", "Side Salad", "Mozzarella Sticks"]
-    drink = ["Soda", "Lemonade", "Sweet Tea", "Water"]
+    mains = [
+        # handhelds
+        "Burger", "Cheeseburger", "Chicken Sandwich", "Veggie Burger",
+        "Grilled Cheese", "Pulled-Pork Sandwich", "BLT",
+        # wraps / tacos
+        "Chicken Wrap", "Falafel Wrap", "Beef Taco", "Fish Taco",
+        # bowls / plates
+        "Pizza", "Margherita Pizza", "Pepperoni Pizza",
+        "Chicken Alfredo Pasta", "Spaghetti & Meatballs",
+        "Chicken Teriyaki Bowl", "Burrito Bowl",
+        "Caesar Salad", "Greek Salad", "Cobb Salad"
+    ]
+
+    sides = [
+        "Fries", "Sweet-Potato Fries", "Onion Rings", "Tater Tots",
+        "Potato Wedges", "Mozzarella Sticks", "Garlic Bread",
+        "Cole Slaw", "Side Salad", "Fruit Cup", "Mac & Cheese",
+        "Chips & Salsa", "Guacamole & Chips", "Cup of Chili",
+        "Tomato Soup", "Chicken Noodle Soup", "Steamed Veggies"
+    ]
+
+    drinks = [
+        # cold
+        "Soda", "Diet Soda", "Root Beer", "Lemonade", "Iced Tea",
+        "Sweet Tea", "Orange Juice", "Apple Juice", "Sports Drink",
+        "Sparkling Water", "Bottled Water",
+        # hot
+        "Coffee", "Latte", "Cappuccino", "Hot Tea", "Hot Chocolate",
+        # specialty
+        "Smoothie", "Milkshake", "Iced Coffee"
+    ]
 
 
 class Order:
@@ -31,7 +59,9 @@ class Order:
     
     def _choose_drink(self) -> str:
         """Randomly choose 0 to 1 drinks."""
-        choice = random.choice(Menu.drink)
+        if random.randint(0, 1) == 0:
+            return None
+        choice = random.choice(Menu.drinks)
         print(f"[DEBUG] Chosen drink: {choice}")
         return choice
 

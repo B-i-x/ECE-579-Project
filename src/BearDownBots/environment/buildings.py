@@ -64,7 +64,7 @@ class SquareBuilding(Building):
 
 class HollowSquareBuilding(Building):
     likelihood = 0.5
-    thickness: int = 5
+    thickness: int = 30
 
     def __init__(self, min_cells: int, max_cells: int, thickness: int = None):
         t = thickness if thickness is not None else type(self).thickness

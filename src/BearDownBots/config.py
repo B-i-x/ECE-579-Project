@@ -13,5 +13,5 @@ class Config:
         MAP_ROWS  = 2000
         MAP_COLS  = 2000
         MAX_BUILDING_ATTEMPTS = 100 ## the higher the number, the denser the campus is
-        MIN_BUILDING_CELLS = 100
-        MAX_BUILDING_CELLS = 250
+        MIN_BUILDING_CELLS = 75
+        MAX_BUILDING_CELLS = 200

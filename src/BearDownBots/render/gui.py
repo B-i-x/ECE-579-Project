@@ -16,6 +16,8 @@ class GuiWrapper(tk.Tk):
         super().__init__()
         self.withdraw()
 
+        self.setup()
+
     def setup(self):
          # --- Main window title & size ---
         width = Config.GUI.WINDOW_WIDTH_PIXELS

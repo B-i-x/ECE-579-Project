@@ -17,6 +17,10 @@ class Config:
         MAX_BUILDING_CELLS = 200 ## maximum number of cells a building can occupy
         OBSTACLES_AS_PERCENTAGE_OF_WALKWAYS = 0.002 ## percentage is in decimal form (0.002 = 0.2%)
 
+    class Simulation:
+        # simulation
+        NUM_ROBOTS = 3
+
     def get_asset_dir():
         # Get the directory of the assets folder
         import os

@@ -50,6 +50,14 @@ def create_campus_environment(progress_window: ProgressWindow | None) -> Map:
     campus_map.create_food_warehouse()
 
     campus_map.add_obstacles_randomly()
+
+    ## setting pick up points
+    for bld in campus_map.buildings:
+        building_special_cell = bld.get_random_sidewalk_cell()
+        if bld.name == "Food Warehouse":
+            campus_map.add_cell_type(building_special_cell[0], building_special_cell[1], CELL_TYPES.RESTUARANT_PICKUP)
+        else:
+            campus_map.add_cell_type(building_special_cell[0], building_special_cell[1], CELL_TYPES.BUILDING_DROP_OFF)
     # -----------------------------------------------------------------
     #  Random-order generation plumbing
     # -----------------------------------------------------------------

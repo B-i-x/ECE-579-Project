@@ -1,10 +1,15 @@
-from BearDownBots.static import create_campus_environment
-from BearDownBots.render.gui import GuiWrapper
+import time
+
 from BearDownBots.config import Config
-from BearDownBots.render.loading import ProgressWindow
 from BearDownBots.clock import SimulationClock
 
-import time
+from BearDownBots.static import create_campus_environment
+
+from BearDownBots.dynamic.robot import Robot
+
+from BearDownBots.render.gui import GuiWrapper
+from BearDownBots.render.loading import ProgressWindow
+
 class BearDownBotsApp():
     def __init__(self):
         self.environment = None  # Placeholder for the environment object
@@ -23,15 +28,15 @@ class BearDownBotsApp():
         """
         self.clock = SimulationClock()
         self.environment = create_campus_environment(self.progress_window)
-        self.robots = self.environment.robots
 
-        self.renderer.setup()
+        self.robots = [Robot(count, self.environment) for count in range(Config.Simulation.NUM_ROBOTS)]
+
         self.renderer.render_campus(self.environment, self.progress_window)
 
 
         self.progress_window.destroy()  
 
-        #setup is done
+        
         self.renderer.show_main_screen()
 
 

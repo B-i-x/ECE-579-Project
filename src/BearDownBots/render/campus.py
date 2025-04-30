@@ -5,6 +5,7 @@ from BearDownBots.config import Config
 from BearDownBots.static.cell import CELL_TYPES
 from BearDownBots.static.map import Map
 from BearDownBots.render.loading import ProgressWindow
+from BearDownBots.dynamic.robot import Robot
 
 class CampusRenderer:
     def __init__(self, parent, campus_map: Map, progress_window: ProgressWindow = None):
@@ -90,6 +91,12 @@ class CampusRenderer:
             draw.text((x_text, y_text), text, fill='black', font=font)
 
         return img
+
+    def render_robot(self, robot: Robot):
+        """
+        Add a robot to the canvas at its current position.
+        """
+        
 
 
     def _on_mouse_down(self, event):

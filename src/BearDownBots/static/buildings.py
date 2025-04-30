@@ -18,6 +18,8 @@ class Building:
         self.top_left_x = None  # to be set when placed on map
         self.top_left_y = None  # to be set when placed on map
 
+        self.sidewalk_cells = []  # list of (dr, dc) offsets for sidewalks
+
     def get_center_coords(self):
         """
         Get the center coordinates based on top left coordiantes and its height and width
@@ -27,6 +29,14 @@ class Building:
         center_x = self.top_left_x + self.h // 2
         center_y = self.top_left_y + self.w // 2
         return center_x, center_y
+    
+    def get_random_sidewalk_cell(self) -> tuple[int, int]:
+        """
+        Get a random sidewalk cell from the list of sidewalk cells.
+        """
+        if not self.sidewalk_cells:
+            raise ValueError("No sidewalk cells available.")
+        return random.choice(self.sidewalk_cells)
     
     @classmethod
     def generate(cls, min_cells: int, max_cells: int) -> 'Building':

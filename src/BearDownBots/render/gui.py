@@ -4,7 +4,7 @@ import os
 
 from BearDownBots.config import Config
 
-from BearDownBots.environment.map import Map
+from BearDownBots.static.map import Map
 
 from BearDownBots.render.campus import CampusRenderer
 from BearDownBots.render.loading import ProgressWindow

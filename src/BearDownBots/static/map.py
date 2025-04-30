@@ -2,11 +2,11 @@ from __future__ import annotations          # <-- add once at top of file
 from typing import Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:                           # forward-refs to avoid circular import at runtime
-    from BearDownBots.actors.restaurant import Restaurant
-    from BearDownBots.actors.rand_order_scheduler import RandomOrderScheduler
+    from BearDownBots.dynamic.restaurant import Restaurant
+    from BearDownBots.dynamic.rand_order_scheduler import RandomOrderScheduler
 
-from BearDownBots.environment.cell import Cell, CELL_TYPES, OBSTACLE_TYPES
-from BearDownBots.environment.buildings import Building
+from BearDownBots.static.cell import Cell, CELL_TYPES, OBSTACLE_TYPES
+from BearDownBots.static.buildings import Building
 from BearDownBots.config import Config
 
 import random

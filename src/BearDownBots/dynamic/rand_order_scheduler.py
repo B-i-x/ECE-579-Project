@@ -1,6 +1,6 @@
 # BearDownBots/actors/random_order_scheduler.py
 import random
-from BearDownBots.actors.randOrders import Order            # or OrderGenerator
+from BearDownBots.dynamic.randOrders import Order            # or OrderGenerator
 from typing import Sequence
 
 class RandomOrderScheduler:

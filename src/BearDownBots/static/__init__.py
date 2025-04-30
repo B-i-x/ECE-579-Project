@@ -1,11 +1,11 @@
 import random
 
-from BearDownBots.environment.map import Map
+from BearDownBots.static.map import Map
 from BearDownBots.config import Config
-from BearDownBots.environment.buildings import Building
-from BearDownBots.environment.cell import CELL_TYPES
-from BearDownBots.actors.rand_order_scheduler import RandomOrderScheduler
-from BearDownBots.actors.restaurant import Restaurant
+from BearDownBots.static.buildings import Building
+from BearDownBots.static.cell import CELL_TYPES
+from BearDownBots.dynamic.rand_order_scheduler import RandomOrderScheduler
+from BearDownBots.dynamic.restaurant import Restaurant
 from BearDownBots.render.loading import ProgressWindow
 
 

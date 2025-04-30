@@ -2,16 +2,16 @@ import random
 import time
 import schedule
 from BearDownBots.app_context import get_app
-from BearDownBots.environment.grid import Grid
-from BearDownBots.environment.cell import Cell, BuildingCell, WalkwayCell, RestaurantCell
-from BearDownBots.environment.buildings import (
+from BearDownBots.static.grid import Grid
+from BearDownBots.static.cell import Cell, BuildingCell, WalkwayCell, RestaurantCell
+from BearDownBots.static.buildings import (
     RectangleBuilding,
     RatioRectangleBuilding,
     SquareBuilding,
     HollowSquareBuilding,
     TrapezoidBuilding,
 )
-from BearDownBots.actors.randOrders import OrderGenerator
+from BearDownBots.dynamic.randOrders import OrderGenerator
 
 SHAPE_CLASSES = {
     "rectangle":       RectangleBuilding,

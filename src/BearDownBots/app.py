@@ -1,4 +1,4 @@
-from BearDownBots.environment import create_campus_environment
+from BearDownBots.static import create_campus_environment
 from BearDownBots.render.gui import GuiWrapper
 from BearDownBots.config import Config
 from BearDownBots.render.loading import ProgressWindow
@@ -21,15 +21,17 @@ class BearDownBotsApp():
         """
         Setup the application environment and renderer.
         """
-        self.clock = SimulationClock
+        self.clock = SimulationClock()
         self.environment = create_campus_environment(self.progress_window)
+        self.robots = self.environment.robots
 
         self.renderer.setup()
-
         self.renderer.render_campus(self.environment, self.progress_window)
 
-        self.progress_window.destroy()  #setup is done
 
+        self.progress_window.destroy()  
+
+        #setup is done
         self.renderer.show_main_screen()
 
 

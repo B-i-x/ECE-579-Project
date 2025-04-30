@@ -2,8 +2,8 @@ import tkinter as tk
 from PIL import Image, ImageDraw, ImageTk, ImageFont
 
 from BearDownBots.config import Config
-from BearDownBots.environment.cell import CELL_TYPES
-from BearDownBots.environment.map import Map
+from BearDownBots.static.cell import CELL_TYPES
+from BearDownBots.static.map import Map
 from BearDownBots.render.loading import ProgressWindow
 
 class CampusRenderer:

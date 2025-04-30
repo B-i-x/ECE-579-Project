@@ -11,6 +11,7 @@ from BearDownBots.render.loading import ProgressWindow
 from BearDownBots.render.user_dash import UserDashboardRenderer
 from BearDownBots.render.restaurant_dash import RestaurantDashboardRenderer
 
+from BearDownBots.dynamic.robot import Robot
 class GuiWrapper(tk.Tk):
     def __init__(self):
         super().__init__()
@@ -40,16 +41,38 @@ class GuiWrapper(tk.Tk):
         self.restaurant_dash = RestaurantDashboardRenderer(self.restaurant_dash_frame)
         self.restaurant_dash.render()
 
+    def add_objects_to_render(self, 
+                                campus_map: Map,
+                                robots: list, 
+                                progress_window: ProgressWindow = None):
+        """
+        Add objects to the campus map renderer.
+        """
+        self.campus_map : Map = campus_map
+        self.robots : list[Robot] = robots
+        self.progress_window : ProgressWindow = progress_window
+
     def render_campus(self, campus_map: Map, progress_window: ProgressWindow = None):
         """
         Render the campus map using CampusRenderer.
         """
-        self.renderer = CampusRenderer(self.content_paned, campus_map, progress_window)
 
-    def show_main_screen(self):
+    def update(self, dt):
+        """
+        Update the GUI elements. This method can be called in a loop to refresh the GUI.
+        """
+        # self.renderer.update(dt)
+
+    def start(self):
         """
         Show the main screen of the GUI.
         """
+        self.campus_renderer = CampusRenderer(self.content_paned, self.campus_map, self.progress_window)
+
+        self.progress_window.destroy()  
+
         self.deiconify()
         self.mainloop()
+
+
 

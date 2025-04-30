@@ -27,17 +27,19 @@ class BearDownBotsApp():
         Setup the application environment and renderer.
         """
         self.clock = SimulationClock()
+
         self.environment = create_campus_environment(self.progress_window)
 
         self.robots = [Robot(count, self.environment) for count in range(Config.Simulation.NUM_ROBOTS)]
 
-        self.renderer.render_campus(self.environment, self.progress_window)
 
+        self.renderer.add_objects_to_render(
+            campus_map=self.environment,
+            robots=self.robots,
+            progress_window=self.progress_window
+        )
 
-        self.progress_window.destroy()  
-
-        
-        self.renderer.show_main_screen()
+        self.renderer.start()
 
 
     def run(self): 
@@ -49,6 +51,7 @@ class BearDownBotsApp():
             dt = self.clock.tick()
 
             self.environment.update(self.clock.delta_time)
+
             self.renderer.update(self.clock.delta_time)
 
             time.sleep(1)

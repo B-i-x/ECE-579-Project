@@ -18,6 +18,7 @@ class CustomCellTypeEnum(Enum):
 
     
 class CELL_TYPES(CustomCellTypeEnum):
+    ROBOT      = (4, "#00008B")   # dark blue
     RESTAURANT = (5, "#e6eb14")   # yellow
     RESTUARANT_PICKUP = (6, "#e06192")  # pink
     BUILDING_DROP_OFF = (7, "#ff8c00")  # dark orange
@@ -25,7 +26,6 @@ class CELL_TYPES(CustomCellTypeEnum):
     BUILDING   = (1, "#A0522D")   # sienna
     OBSTACLE   = (3, "#8B0000")   # dark red
     WALKWAY    = (2, "#555555")   # dark gray
-    ROBOT      = (4, "#00008B")   # dark blue
 
 
 
@@ -33,10 +33,27 @@ class OBSTACLE_TYPES(Enum):
     PERSON = 0
     LIGHT_POST = 1
 
-class Cell:
-    def __init__(self, x: int, y: int, cell_type: CELL_TYPES):
+class Position:
+    def __init__(self, x: int, y: int):
         self.x = x
         self.y = y
+
+    def __str__(self):
+        return f"({self.x}, {self.y})"
+
+    def __eq__(self, other):
+        if isinstance(other, Position):
+            return self.x == other.x and self.y == other.y
+        return False
+
+    def __hash__(self):
+        return hash((self.x, self.y))
+    
+class Cell:
+    def __init__(self, x: int, y: int, cell_type: CELL_TYPES):
+        self.position = Position(x, y)
+        self.x = self.position.x
+        self.y = self.position.y
         # store a set of types (allows multiple types per cell)
         self.types = {cell_type}
 

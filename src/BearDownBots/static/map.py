@@ -33,6 +33,9 @@ class Map:
             [Cell(x, y, CELL_TYPES.GROUND) for y in range(self.cols)]
             for x in range(self.rows)
         ]
+
+        self.one_dimensional_grid = [cell for row in self.grid for cell in row]
+
         return self.grid
 
     def get_cell(self, x: int, y: int) -> Cell:

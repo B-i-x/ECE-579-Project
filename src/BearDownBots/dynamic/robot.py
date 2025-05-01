@@ -25,63 +25,84 @@ class Robot:
         self.place_self_on_restaurant()
 
     def place_self_on_restaurant(self):
-        """
-        Place the robot on a restaurant cell.
-        """
-        # Placeholder for placing the robot on a restaurant cell
         for cell in self.map.one_dimensional_grid:
             if cell.has_type(CELL_TYPES.RESTUARANT_PICKUP):
-                self.position = cell.position
-                self.previous_position = cell.position
-                self.map.get_cell(self.position.x, self.position.y).add_type(CELL_TYPES.ROBOT)
+                # copy the cell’s coords instead of sharing the same object
+                px, py = cell.position.x, cell.position.y
+                self.position = Position(px, py)
+                self.previous_position = Position(px, py)
+
+                cell.add_type(CELL_TYPES.ROBOT)
                 print(f"Placed robot {self.id} at {self.position}")
-                break
+                return
             
 
-    def a_star(self, start_cell : Cell, goal_cell : Cell) -> list[Cell]:
+    def a_star(self, start_cell: Cell, goal_cell: Cell) -> list[Cell]:
         """
-        A* algorithm to find the shortest path from start to goal.
+        A* placeholder: picks one of the four cardinal neighbors **only**
+        if that neighbor cell has type WALKWAY.
+        Sets self.next_direction_to_move accordingly.
         """
-        # Placeholder for A* algorithm implementation
+        x, y = self.position.x, self.position.y
+        candidates = []
 
-        ## for now just choose a random direction to move in
-        directions = [Direction.UP, Direction.DOWN, Direction.LEFT, Direction.RIGHT]
-        self.next_direction_to_move = random.choice(directions)
-        if self.id == 1:
-            self.next_direction_to_move = Direction.UP
-        if self.id == 2:
-            self.next_direction_to_move = Direction.DOWN
+        # check each direction
+        for direction, dx, dy in [
+            (Direction.UP,    -1,  0),
+            (Direction.DOWN,   1,  0),
+            (Direction.LEFT,   0, -1),
+            (Direction.RIGHT,  0,  1),
+        ]:
+            nx, ny = x + dx, y + dy
+            # in‐bounds?
+            if 0 <= nx < self.map.rows and 0 <= ny < self.map.cols:
+                cell = self.map.get_cell(nx, ny)
+                # only allow moving onto WALKWAY
+                if cell.has_type(CELL_TYPES.WALKWAY):
+                    candidates.append(direction)
+
+        if candidates:
+            self.next_direction_to_move = random.choice(candidates)
+        else:
+            # no valid moves—stay put (or you could fallback to GROUND, etc.)
+            self.next_direction_to_move = None
+
+        # we’re not building a full path yet, so just return empty
+        return []
 
         
-
     def move(self):
         """
-        Move the robot in the next direction.
-        This method updates the robot's position and the map accordingly.
+        Move the robot in its next_direction_to_move,
+        without ever mutating Position in place.
         """
+        if self.next_direction_to_move is None:
+            return
 
+        # 1) stash the old position
+        old_pos = self.position
 
-        if not self.position or not self.next_direction_to_move:
-            return  # No movement if position or direction is undefined
-
-        # Update the previous position
-        self.previous_position = Position(self.position.x, self.position.y)
-
-        # Move in the next direction
-        if self.next_direction_to_move == Direction.UP:
-            self.position.x -= 1
+        # 2) compute a brand-new Position
+        if   self.next_direction_to_move == Direction.UP:
+            new_pos = Position(old_pos.x - 1, old_pos.y)
         elif self.next_direction_to_move == Direction.DOWN:
-            self.position.x += 1
+            new_pos = Position(old_pos.x + 1, old_pos.y)
         elif self.next_direction_to_move == Direction.LEFT:
-            self.position.y -= 1
+            new_pos = Position(old_pos.x, old_pos.y - 1)
         elif self.next_direction_to_move == Direction.RIGHT:
-            self.position.y += 1
+            new_pos = Position(old_pos.x, old_pos.y + 1)
+        else:
+            return
 
-        print(f"Moving robot {self.id} from {self.previous_position} to {self.position} in direction {self.next_direction_to_move}")    
+        # 3) update your record
+        self.previous_position = old_pos
+        self.position = new_pos
 
-        # Update the map with the robot's new position
-        self.map.get_cell(self.position.x, self.position.y).add_type(CELL_TYPES.ROBOT)
-        self.map.get_cell(self.previous_position.x, self.previous_position.y).remove_type(CELL_TYPES.ROBOT)
+        print(f"Moving robot {self.id} from {old_pos} to {new_pos} in direction {self.next_direction_to_move}")
+
+        # 4) update the map‐cell types
+        self.map.get_cell(old_pos.x, old_pos.y).remove_type(CELL_TYPES.ROBOT)
+        self.map.get_cell(new_pos.x, new_pos.y).add_type   (CELL_TYPES.ROBOT)
 
     def add_order(self, order):
         """

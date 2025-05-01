@@ -18,9 +18,9 @@ class CustomCellTypeEnum(Enum):
 
     
 class CELL_TYPES(CustomCellTypeEnum):
+    RESTUARANT_PICKUP = (6, "#e06192")  # pink
     ROBOT      = (4, "#00008B")   # dark blue
     RESTAURANT = (5, "#e6eb14")   # yellow
-    RESTUARANT_PICKUP = (6, "#e06192")  # pink
     BUILDING_DROP_OFF = (7, "#ff8c00")  # dark orange
     GROUND     = (0, "#c1e8c2")   # dark green
     BUILDING   = (1, "#A0522D")   # sienna

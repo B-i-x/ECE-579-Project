@@ -24,7 +24,7 @@ class RobotRenderer:
         self.canvas.delete("robot")
 
         # 2) draw each robot with the "robot" tag
-        radius = 1
+        radius = 3
         z  = self.data.zoom
         ox = self.data.offset_x
         oy = self.data.offset_y

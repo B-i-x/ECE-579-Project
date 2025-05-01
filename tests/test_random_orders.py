@@ -3,7 +3,7 @@ Run the campus for N simulated minutes and print every order placed.
 """
 
 import time
-from BearDownBots.environment import create_campus_environment
+from BearDownBots.static import create_campus_environment
 from BearDownBots.clock import SimulationClock
 from BearDownBots.config import Config
 

@@ -2,11 +2,11 @@ from __future__ import annotations          # <-- add once at top of file
 from typing import Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:                           # forward-refs to avoid circular import at runtime
-    from BearDownBots.actors.restaurant import Restaurant
-    from BearDownBots.actors.rand_order_scheduler import RandomOrderScheduler
+    from BearDownBots.dynamic.restaurant import Restaurant
+    from BearDownBots.dynamic.rand_order_scheduler import RandomOrderScheduler
 
-from BearDownBots.environment.cell import Cell, CELL_TYPES, OBSTACLE_TYPES
-from BearDownBots.environment.buildings import Building
+from BearDownBots.static.cell import Cell, CELL_TYPES, OBSTACLE_TYPES
+from BearDownBots.static.buildings import Building
 from BearDownBots.config import Config
 
 import random
@@ -19,7 +19,7 @@ class Map:
         # keep track of obstacle specifics
         self.obstacles = {}  # {(x, y): obstacle_type}
 
-        self.buildings = []  # list of buildings placed on the map
+        self.buildings : list[Building] = []  # list of buildings placed on the map
         self.walkways = []  # list of walkways placed on the map
 
         self.restaurant: Optional['Restaurant'] = None
@@ -33,6 +33,9 @@ class Map:
             [Cell(x, y, CELL_TYPES.GROUND) for y in range(self.cols)]
             for x in range(self.rows)
         ]
+
+        self.one_dimensional_grid = [cell for row in self.grid for cell in row]
+
         return self.grid
 
     def get_cell(self, x: int, y: int) -> Cell:
@@ -87,17 +90,22 @@ class Map:
                 self.remove_cell_type(x, y, CELL_TYPES.GROUND)
                 self.add_cell_type(x, y, CELL_TYPES.BUILDING)
 
-        # Place sidewalks around the building's actual cells
+        # now place sidewalks AND collect their coords
+        sidewalk_cells = []
         for dr, dc in building.cells:
-            for adj in [(-1, 0), (1, 0), (0, -1), (0, 1)]:  # up, down, left, right
-                adj_r, adj_c = dr + adj[0], dc + adj[1]
-                x, y = x0 + adj_r, y0 + adj_c
-                if 0 <= x < self.rows and 0 <= y < self.cols:
-                    cell = self.get_cell(x, y)
+            for adj in [(-1,0), (1,0), (0,-1), (0,1)]:
+                ax, ay = x0 + dr + adj[0], y0 + dc + adj[1]
+                if 0 <= ax < self.rows and 0 <= ay < self.cols:
+                    cell = self.get_cell(ax, ay)
                     if cell.has_type(CELL_TYPES.GROUND):
-                        self.remove_cell_type(x, y, CELL_TYPES.GROUND)
-                        self.add_cell_type(x, y, CELL_TYPES.WALKWAY)
+                        self.remove_cell_type(ax, ay, CELL_TYPES.GROUND)
+                        self.add_cell_type   (ax, ay, CELL_TYPES.WALKWAY)
+                        sidewalk_cells.append((ax, ay))
 
+
+        building.sidewalk_cells = sidewalk_cells
+
+        # Store the building's top-left coordinates for later reference
         building.top_left_x = x0
         building.top_left_y = y0
         # Store the building for later reference
@@ -184,6 +192,7 @@ class Map:
         building = random.choice(self.buildings)
         # remove the building type from the cell
         for dr, dc in building.cells:
+            building.name = "Food Warehouse"
             x, y = building.top_left_x + dr, building.top_left_y + dc
             cell = self.get_cell(x, y)
             cell.remove_type(CELL_TYPES.BUILDING)

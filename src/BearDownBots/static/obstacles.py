@@ -2,7 +2,7 @@
 import random
 from typing import Set, Tuple, List
 
-from BearDownBots.environment.cell import WalkwayCell, ObstacleCell
+from BearDownBots.static.cell import WalkwayCell, ObstacleCell
 
 Coord = Tuple[int, int]
 

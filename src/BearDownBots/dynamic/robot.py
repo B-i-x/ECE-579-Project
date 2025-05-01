@@ -54,7 +54,6 @@ class Robot:
         This method updates the robot's position and the map accordingly.
         """
 
-        # print(f"Moving robot {self.id} from {self.previous_position} to {self.position} in direction {self.next_direction_to_move}")    
 
         if not self.position or not self.next_direction_to_move:
             return  # No movement if position or direction is undefined
@@ -71,6 +70,8 @@ class Robot:
             self.position.y -= 1
         elif self.next_direction_to_move == "right":
             self.position.y += 1
+
+        print(f"Moving robot {self.id} from {self.previous_position} to {self.position} in direction {self.next_direction_to_move}")    
 
         # Update the map with the robot's new position
         self.map.get_cell(self.position.x, self.position.y).add_type(CELL_TYPES.ROBOT)

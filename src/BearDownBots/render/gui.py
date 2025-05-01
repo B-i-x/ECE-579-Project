@@ -11,6 +11,15 @@ from BearDownBots.render.restaurant_dash import RestaurantDashboardRenderer
 
 from BearDownBots.dynamic.robot import Robot
 
+class CampusRendererDataStorage:
+    """
+    Class to store the campus renderer data.
+    """
+    def __init__(self):
+        self.zoom = Config.GUI.CAMPUS_MAP_ZOOM
+        self.offset_x = 0
+        self.offset_y = 0
+
 
 class GuiWrapper(tk.Tk):
     def __init__(self):
@@ -39,6 +48,8 @@ class GuiWrapper(tk.Tk):
         self.content_paned.add(self.restaurant_dash_frame)
         self.restaurant_dash = RestaurantDashboardRenderer(self.restaurant_dash_frame)
 
+        self.campus_render_data = CampusRendererDataStorage()
+
     def add_objects_to_render(self, 
                                 campus_map: Map,
                                 robots: list, 
@@ -57,7 +68,7 @@ class GuiWrapper(tk.Tk):
         """
         Setting up the GUI components.
         """
-        self.campus_renderer = CampusRenderer(self.content_paned, self.campus_map, self.progress_window)
+        self.campus_renderer = CampusRenderer(self.content_paned, self.campus_map, self.progress_window, self.campus_render_data)
         self.campus_renderer.render()
 
         self.restaurant_dash.add_campus_renderer(self.campus_renderer)

@@ -89,8 +89,8 @@ class RestaurantDashboardRenderer:
             cam._scaled_image = base.resize((new_w, new_h), Image.NEAREST)
 
         # 2) Map robot cell → pixel in the scaled image
-        cell_x   = robot.position.x   # or .col
-        cell_y   = robot.position.y   # or .row
+        cell_x   = robot.position.y   # or .col
+        cell_y   = robot.position.x   # or .row
         robot_px = cell_x * cam.zoom
         robot_py = cell_y * cam.zoom
 

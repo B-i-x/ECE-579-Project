@@ -8,14 +8,19 @@ from BearDownBots.render.loading import ProgressWindow
 from BearDownBots.dynamic.robot import Robot
 
 class CampusRenderer:
-    def __init__(self, parent, campus_map: Map, progress_window: ProgressWindow = None):
+    def __init__(self, parent, 
+                 campus_map: Map, 
+                 progress_window: ProgressWindow = None,
+                 campus_render_data = None):
         """
         Initialize the CampusRenderer with a parent widget and a campus map.
         """
         self.progress_window = progress_window
         self.campus_map = campus_map
         self.parent = parent
-        self.offset = (0, 0)
+
+        self.renderer_data = campus_render_data
+
         self._drag_start = None
 
         # physical canvas size (pixels)
@@ -31,7 +36,7 @@ class CampusRenderer:
         # dynamic zoom limits so we NEVER zoom out below the canvas size
         self.min_zoom = 0.75
         self.max_zoom = 8.0
-        self.zoom = 1
+        self.zoom = self.renderer_data.zoom
 
         # setup canvas
         self.canvas = tk.Canvas(
@@ -159,20 +164,40 @@ class CampusRenderer:
         self.render()
 
     def _on_mouse_wheel(self, event):
-        delta = 1 if getattr(event, 'delta', 0) > 0 or event.num == 4 else -1
-        new_zoom = min(self.max_zoom, max(self.min_zoom, self.zoom + delta*0.1))
-        if new_zoom != self.zoom:
-            # compute center in image coords
-            cx = self.canvas_w/2 + self.offset[1]*self.zoom
-            cy = self.canvas_h/2 + self.offset[0]*self.zoom
-            self.zoom = new_zoom
-            size = (int(self._base_image.width*self.zoom), int(self._base_image.height*self.zoom))
-            self._scaled_image = self._base_image.resize(size, Image.NEAREST)
-            # recalc offset to maintain center
-            co = int((cx - self.canvas_w/2)/(self.zoom))
-            ro = int((cy - self.canvas_h/2)/(self.zoom))
-            self.offset = (max(0, ro), max(0, co))
-            self.render()
+        # 1) Figure out whether we’re zooming in or out
+        delta     = 1 if getattr(event, 'delta', 0) > 0 or event.num == 4 else -1
+        old_zoom  = self.zoom
+        new_zoom  = min(self.max_zoom, max(self.min_zoom, old_zoom + delta * 0.1))
+        if new_zoom == old_zoom:
+            return
+
+        # 2) Compute the current canvas‐center in base‐image coords
+        cx_canvas, cy_canvas = self.canvas_w / 2, self.canvas_h / 2
+        # offset_x is in SCALED‐IMAGE pixels, so convert back to base‐coords:
+        center_base_x = (self.offset_x + cx_canvas) / old_zoom
+        center_base_y = (self.offset_y + cy_canvas) / old_zoom
+
+        # 3) Apply the new zoom and rebuild the scaled image
+        self.zoom = new_zoom
+        new_size = (
+            int(self._base_image.width  * new_zoom),
+            int(self._base_image.height * new_zoom)
+        )
+        self._scaled_image = self._base_image.resize(new_size, Image.NEAREST)
+
+        # 4) Compute new offsets so that (center_base_x,center_base_y) sits at canvas center
+        self.offset_x = center_base_x * new_zoom - cx_canvas
+        self.offset_y = center_base_y * new_zoom - cy_canvas
+
+        # 5) (Optional) clamp if you want to avoid blank edges
+        max_off_x = max(0, self._scaled_image.width  - self.canvas_w)
+        max_off_y = max(0, self._scaled_image.height - self.canvas_h)
+        self.offset_x = min(max(self.offset_x, 0), max_off_x)
+        self.offset_y = min(max(self.offset_y, 0), max_off_y)
+
+        # 6) Finally, re-render
+        self.render()
+
 
     def render(self):
         # crop the scaled image at pixel offset

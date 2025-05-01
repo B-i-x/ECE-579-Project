@@ -10,6 +10,8 @@ from BearDownBots.dynamic.robot import Robot
 from BearDownBots.render.gui import GuiWrapper
 from BearDownBots.render.loading import ProgressWindow
 
+from BearDownBots.dynamic.rand_order_scheduler import OrderPlacer
+
 class BearDownBotsApp():
     def __init__(self):
         self.environment = None  # Placeholder for the environment object
@@ -30,6 +32,8 @@ class BearDownBotsApp():
         self.sim_clock = SimulationClock()
 
         self.environment = create_campus_environment(self.progress_window)
+
+        self.order_scheduler = OrderPlacer(self.environment.buildings)
 
         self.robots = [Robot(count, self.environment) for count in range(Config.Simulation.NUM_ROBOTS)]
 
@@ -63,7 +67,14 @@ class BearDownBotsApp():
         # 1) Advance the simulation clock
         self.sim_clock.tick()
 
+        self.order_scheduler.place_new_order()
+
+        self.order_scheduler.load_order_into_robots(self.robots)
         
+        for bot in self.robots:
+            bot.act()
+
+        self.renderer.campus_renderer.update_robot_positions(self.robots)
         # this is like the window.update() call in a GUI loop
         # 3) Schedule the next step in ~16ms (about 60 updates/sec)
         self.renderer.after(

@@ -1,7 +1,7 @@
 # src/BearDownBots/config.py
 
 class Config:
-    TIME_SCALE = 1 ## time scale for the simulation (1 = real time, 2 = twice as fast, etc.)
+    TIME_SCALE = 0.2 ## time scale for the simulation (1 = real time, 2 = twice as fast, etc.)
     
     class GUI:
         # general
@@ -21,6 +21,7 @@ class Config:
     class Simulation:
         # simulation
         NUM_ROBOTS = 3
+        ORDER_FREQUENCY = 0.1
 
     def get_asset_dir():
         # Get the directory of the assets folder

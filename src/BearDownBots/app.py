@@ -74,7 +74,7 @@ class BearDownBotsApp():
         for bot in self.robots:
             bot.act()
 
-        self.renderer.campus_renderer.update_robot_positions(self.robots)
+        self.renderer.robot_renderer.render_robots(self.robots)
         # this is like the window.update() call in a GUI loop
         # 3) Schedule the next step in ~16ms (about 60 updates/sec)
         self.renderer.after(

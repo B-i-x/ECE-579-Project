@@ -49,31 +49,43 @@ class Position:
     def __hash__(self):
         return hash((self.x, self.y))
     
+from collections import Counter
+from BearDownBots.static.cell import CELL_TYPES, Position
+
 class Cell:
     def __init__(self, x: int, y: int, cell_type: CELL_TYPES):
         self.position = Position(x, y)
-        self.x = self.position.x
-        self.y = self.position.y
-        # store a set of types (allows multiple types per cell)
-        self.types = {cell_type}
+        self.x, self.y = x, y
+        # now a Counter so we can track how many of each type
+        self.types: Counter[CELL_TYPES,int] = Counter([cell_type])
 
     def add_type(self, cell_type: CELL_TYPES):
         """
-        Add a type to this cell.
+        Add one more instance of this type to the cell.
         """
-        self.types.add(cell_type)
+        self.types[cell_type] += 1
 
     def remove_type(self, cell_type: CELL_TYPES):
         """
-        Remove a type from this cell, if present.
+        Remove one instance of this type, if present.
         """
-        self.types.discard(cell_type)
+        if self.types[cell_type] > 0:
+            self.types[cell_type] -= 1
+            if self.types[cell_type] == 0:
+                del self.types[cell_type]
 
     def has_type(self, cell_type: CELL_TYPES) -> bool:
         """
-        Check if this cell has the given type.
+        True if there’s at least one of that type here.
         """
-        return cell_type in self.types
+        return self.types[cell_type] > 0
+
+    def count_type(self, cell_type: CELL_TYPES) -> int:
+        """
+        How many instances of that type live in this cell?
+        """
+        return self.types[cell_type]
 
     def __repr__(self):
-        return f"Cell({self.x}, {self.y}, types={self.types})"
+        return f"Cell({self.x}, {self.y}, counts={dict(self.types)})"
+

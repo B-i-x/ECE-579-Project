@@ -8,6 +8,7 @@ from BearDownBots.render.campus import CampusRenderer
 from BearDownBots.render.loading import ProgressWindow
 from BearDownBots.render.user_dash import UserDashboardRenderer
 from BearDownBots.render.restaurant_dash import RestaurantDashboardRenderer
+from BearDownBots.render.robot import RobotRenderer
 
 from BearDownBots.dynamic.robot import Robot
 
@@ -70,6 +71,8 @@ class GuiWrapper(tk.Tk):
         """
         self.campus_renderer = CampusRenderer(self.content_paned, self.campus_map, self.progress_window, self.campus_render_data)
         self.campus_renderer.render()
+
+        self.robot_renderer = RobotRenderer(self.campus_renderer.canvas, self.campus_render_data)
 
         self.restaurant_dash.add_campus_renderer(self.campus_renderer)
         self.restaurant_dash.render()

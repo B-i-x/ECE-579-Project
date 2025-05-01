@@ -36,7 +36,6 @@ class CampusRenderer:
         # dynamic zoom limits so we NEVER zoom out below the canvas size
         self.min_zoom = 0.75
         self.max_zoom = 8.0
-        self.zoom = self.renderer_data.zoom
 
         # setup canvas
         self.canvas = tk.Canvas(
@@ -46,7 +45,7 @@ class CampusRenderer:
             bg='white'
         )
          # pre‐scale once
-        scaled_size      = (int(base_w * self.zoom), int(base_h * self.zoom))
+        scaled_size      = (int(base_w * self.renderer_data.zoom), int(base_h * self.renderer_data.zoom))
         self._scaled_image = self._base_image.resize(scaled_size, Image.NEAREST)
         self._tk_image     = None
 
@@ -103,7 +102,7 @@ class CampusRenderer:
         then rebuild the scaled image and re‐render.
         """
         base_pix = self._base_image.load()
-        z        = self.zoom
+        z        = self.renderer_data.zoom
 
         for robot in robots:
             # --- ERASE old robot pixel ---
@@ -138,12 +137,10 @@ class CampusRenderer:
         print(f"Moved robot {robot.id} to {robot.position}")
         self.render()
 
-        
-
 
     def _on_mouse_down(self, event):
         # capture the *current* pixel offset when you start dragging
-        self._drag_start = (event.x, event.y, self.offset_x, self.offset_y)
+        self._drag_start = (event.x, event.y, self.renderer_data.offset_x, self.renderer_data.offset_y)
 
     def _on_mouse_drag(self, event):
         if not hasattr(self, '_drag_start'):
@@ -158,15 +155,15 @@ class CampusRenderer:
         new_off_y = off_y0 - dy
 
         # no clamping—pan freely
-        self.offset_x = new_off_x
-        self.offset_y = new_off_y
+        self.renderer_data.offset_x = new_off_x
+        self.renderer_data.offset_y = new_off_y
 
         self.render()
 
     def _on_mouse_wheel(self, event):
         # 1) Figure out whether we’re zooming in or out
         delta     = 1 if getattr(event, 'delta', 0) > 0 or event.num == 4 else -1
-        old_zoom  = self.zoom
+        old_zoom  = self.renderer_data.zoom
         new_zoom  = min(self.max_zoom, max(self.min_zoom, old_zoom + delta * 0.1))
         if new_zoom == old_zoom:
             return
@@ -174,11 +171,11 @@ class CampusRenderer:
         # 2) Compute the current canvas‐center in base‐image coords
         cx_canvas, cy_canvas = self.canvas_w / 2, self.canvas_h / 2
         # offset_x is in SCALED‐IMAGE pixels, so convert back to base‐coords:
-        center_base_x = (self.offset_x + cx_canvas) / old_zoom
-        center_base_y = (self.offset_y + cy_canvas) / old_zoom
+        center_base_x = (self.renderer_data.offset_x + cx_canvas) / old_zoom
+        center_base_y = (self.renderer_data.offset_y + cy_canvas) / old_zoom
 
         # 3) Apply the new zoom and rebuild the scaled image
-        self.zoom = new_zoom
+        self.renderer_data.zoom = new_zoom
         new_size = (
             int(self._base_image.width  * new_zoom),
             int(self._base_image.height * new_zoom)
@@ -186,10 +183,9 @@ class CampusRenderer:
         self._scaled_image = self._base_image.resize(new_size, Image.NEAREST)
 
         # 4) Compute new offsets so that (center_base_x,center_base_y) sits at canvas center
-        self.offset_x = center_base_x * new_zoom - cx_canvas
-        self.offset_y = center_base_y * new_zoom - cy_canvas
+        self.renderer_data.offset_x = center_base_x * new_zoom - cx_canvas
+        self.renderer_data.offset_y = center_base_y * new_zoom - cy_canvas
 
-        # 5) (Optional) clamp if you want to avoid blank edges
         max_off_x = max(0, self._scaled_image.width  - self.canvas_w)
         max_off_y = max(0, self._scaled_image.height - self.canvas_h)
         self.offset_x = min(max(self.offset_x, 0), max_off_x)
@@ -201,7 +197,7 @@ class CampusRenderer:
 
     def render(self):
         # crop the scaled image at pixel offset
-        x0, y0 = int(self.offset_x), int(self.offset_y)
+        x0, y0 = int(self.renderer_data.offset_x), int(self.renderer_data.offset_y)
         x1, y1 = x0 + self.canvas_w, y0 + self.canvas_h
         view = self._scaled_image.crop((x0, y0, x1, y1))
         self._tk_image = ImageTk.PhotoImage(view)

@@ -32,6 +32,7 @@ class Robot:
         for cell in self.map.one_dimensional_grid:
             if cell.has_type(CELL_TYPES.RESTUARANT_PICKUP):
                 self.position = cell.position
+                self.previous_position = cell.position
                 self.map.get_cell(self.position.x, self.position.y).add_type(CELL_TYPES.ROBOT)
                 print(f"Placed robot {self.id} at {self.position}")
                 break
@@ -46,7 +47,12 @@ class Robot:
         ## for now just choose a random direction to move in
         directions = [Direction.UP, Direction.DOWN, Direction.LEFT, Direction.RIGHT]
         self.next_direction_to_move = random.choice(directions)
-        pass
+        if self.id == 1:
+            self.next_direction_to_move = Direction.UP
+        if self.id == 2:
+            self.next_direction_to_move = Direction.DOWN
+
+        
 
     def move(self):
         """
@@ -62,13 +68,13 @@ class Robot:
         self.previous_position = Position(self.position.x, self.position.y)
 
         # Move in the next direction
-        if self.next_direction_to_move == "up":
+        if self.next_direction_to_move == Direction.UP:
             self.position.x -= 1
-        elif self.next_direction_to_move == "down":
+        elif self.next_direction_to_move == Direction.DOWN:
             self.position.x += 1
-        elif self.next_direction_to_move == "left":
+        elif self.next_direction_to_move == Direction.LEFT:
             self.position.y -= 1
-        elif self.next_direction_to_move == "right":
+        elif self.next_direction_to_move == Direction.RIGHT:
             self.position.y += 1
 
         print(f"Moving robot {self.id} from {self.previous_position} to {self.position} in direction {self.next_direction_to_move}")    

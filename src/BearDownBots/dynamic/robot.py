@@ -1,8 +1,6 @@
 from BearDownBots.static.map import Map
 from BearDownBots.static.cell import CELL_TYPES, Position
 
-
-    
 class Robot:
     def __init__(self, robot_id: int, map: Map):
         self.id = robot_id
@@ -67,4 +65,4 @@ class Robot:
         pass
 
     def __str__(self):
-        return f"Robot {self.id} at {self.map.get_cell(self.id).location}"
+        return f"Robot {self.id} at {self.position}"

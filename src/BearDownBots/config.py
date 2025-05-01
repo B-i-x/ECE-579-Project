@@ -7,6 +7,7 @@ class Config:
         # general
         WINDOW_WIDTH_PIXELS  = 800 ## width of the window in pixels
         WINDOW_HEIGHT_PIXELS = 600 ## height of the window in pixels
+        ROBOT_ZOOM_FACTOR = 2.5 ## zoom factor for the robot images (1 = normal size, 0.5 = half size, etc.)
 
     class Environment:
         # environment

@@ -22,7 +22,7 @@ class UserDashboardRenderer:
         self.center_frame.pack(side=tk.LEFT, expand=True)
         self.start_button = tk.Button(
             self.center_frame, image=self.start_icon,
-            bd=0, highlightthickness=0, relief=tk.FLAT
+            bd=0, highlightthickness=0, relief=tk.FLAT,
         )
         self.start_button.pack(side=tk.LEFT, padx=5)
         self.stop_button = tk.Button(

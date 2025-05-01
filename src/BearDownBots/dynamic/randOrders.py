@@ -39,22 +39,27 @@ class Menu:
 
 class Order:
     """Represents a single customer order."""
-    def __init__(self):
+    def __init__(self, building, print_debug=False):
+        self.print_debug = print_debug
         self.main = self._choose_main()
         self.sides = self._choose_sides()
         self.drink = self._choose_drink()
 
+        self.building = building
+
     def _choose_main(self) -> str:
         """Randomly choose one main dish."""
         choice = random.choice(Menu.mains)
-        print(f"[DEBUG] Chosen main: {choice}")
+        if self.print_debug:
+            print(f"[DEBUG] Chosen main: {choice}")
         return choice
 
     def _choose_sides(self) -> List[str]:
         """Randomly choose 0 to 2 distinct sides."""
         num_sides = random.randint(0, 2)
         choices = random.sample(Menu.sides, k=num_sides)
-        print(f"[DEBUG] Chosen sides: {choices}")
+        if self.print_debug:
+            print(f"[DEBUG] Chosen sides: {choices}")
         return choices
     
     def _choose_drink(self) -> str:
@@ -62,7 +67,8 @@ class Order:
         if random.randint(0, 1) == 0:
             return None
         choice = random.choice(Menu.drinks)
-        print(f"[DEBUG] Chosen drink: {choice}")
+        if self.print_debug:
+            print(f"[DEBUG] Chosen drink: {choice}")
         return choice
 
     def __str__(self) -> str:
@@ -70,13 +76,5 @@ class Order:
         drink_str = "".join(self.drink) if self.drink else "No drink"
         return f"Main: {self.main} | Sides: {sides_str} | Drink: {drink_str}"
 
-
-class OrderGenerator:
-    """Generates multiple random orders."""
-    def __init__(self, num_orders):
-        self.num_orders = num_orders
-
-    def generate_orders(self):
-        return [Order() for _ in range(self.num_orders)]
 
 

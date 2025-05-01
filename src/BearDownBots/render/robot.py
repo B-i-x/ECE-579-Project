@@ -1,36 +1,42 @@
+import tkinter as tk
+
+from BearDownBots.static.cell import CELL_TYPES
+
+from BearDownBots.dynamic.robot import Robot
+from BearDownBots.config import Config
+from BearDownBots.static.cell import CELL_TYPES
+
 class RobotRenderer:
-    def __init__(self):
-        # … existing init …
-        self.robot_icons: dict[Robot, int] = {}  # Robot → canvas item id
 
-    def render(self):
-        # … existing background draw …
-        self._draw_robots()
+    def __init__(self, 
+                canvas: tk.Canvas,
+                campus_renderer_data):
+        """Initialize the RobotRenderer."""
+        self.data = campus_renderer_data
+        self.canvas = canvas
 
-    def _draw_robots(self):
-        px = self.base_px * self.zoom
-        ro, co = self.offset
+    def render_robots(self, robots: list[Robot]):
+        """
+        Draw each robot as a circle on the canvas, using the current
+        zoom/offset from data. Clears any previous robot ovals first.
+        """
+        # 1) remove old robot ovals
+        self.canvas.delete("robot")
 
-        # 1) Create icon if new
-        for robot in self.campus_map.robots:
-            if robot not in self.robot_icons:
-                # a simple circle or image
-                x, y = robot.get_position()
-                cx = (y - co + 0.5) * px
-                cy = (x - ro + 0.5) * px
-                item = self.canvas.create_oval(
-                    cx- px*0.4, cy- px*0.4, cx+ px*0.4, cy+ px*0.4,
-                    fill="blue", tags="robot"
-                )
-                self.robot_icons[robot] = item
+        # 2) draw each robot with the "robot" tag
+        radius = 3
+        z  = self.data.zoom
+        ox = self.data.offset_x
+        oy = self.data.offset_y
 
-        # 2) Move existing icons
-        for robot, item in list(self.robot_icons.items()):
-            if robot not in self.campus_map.robots:
-                self.canvas.delete(item)
-                del self.robot_icons[robot]
-                continue
-            x, y = robot.get_position()
-            cx = (y - co + 0.5) * px
-            cy = (x - ro + 0.5) * px
-            self.canvas.coords(item, cx- px*0.4, cy- px*0.4, cx+ px*0.4, cy+ px*0.4)
+        for robot in robots:
+            screen_x = robot.position.y * z - ox
+            screen_y = robot.position.x * z - oy
+
+            self.canvas.create_oval(
+                screen_x - radius, screen_y - radius,
+                screen_x + radius, screen_y + radius,
+                fill=CELL_TYPES.ROBOT.color,
+                outline='',
+                tags=("robot",)
+            )

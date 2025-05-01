@@ -1,11 +1,10 @@
 import random
 
-from BearDownBots.environment.map import Map
+from BearDownBots.static.map import Map
 from BearDownBots.config import Config
-from BearDownBots.environment.buildings import Building
-from BearDownBots.environment.cell import CELL_TYPES
-from BearDownBots.actors.rand_order_scheduler import RandomOrderScheduler
-from BearDownBots.actors.restaurant import Restaurant
+from BearDownBots.static.buildings import Building
+from BearDownBots.static.cell import CELL_TYPES
+from BearDownBots.dynamic.restaurant import Restaurant
 from BearDownBots.render.loading import ProgressWindow
 
 
@@ -50,22 +49,15 @@ def create_campus_environment(progress_window: ProgressWindow | None) -> Map:
     campus_map.create_food_warehouse()
 
     campus_map.add_obstacles_randomly()
-    # -----------------------------------------------------------------
-    #  Random-order generation plumbing
-    # -----------------------------------------------------------------
-    restaurant = Restaurant()  # queue that will collect orders
-    if not campus_map.buildings:
-        raise RuntimeError(
-            "No buildings were placed on the map; adjust Config parameters "
-            "before starting the RandomOrderScheduler."
-        )
-    scheduler = RandomOrderScheduler(
-        buildings=campus_map.buildings,  # list of Building objects you just created
-        order_placer=restaurant,  # it has .place_order()
-        interval_sim_sec=30  # 1 sim-min; change if desired
-    )
-    # expose them so higher-level code can reach them later
-    campus_map.restaurant = restaurant
-    campus_map.order_scheduler = scheduler
+
+    ## setting pick up points
+    for bld in campus_map.buildings:
+        building_special_cell = bld.get_random_sidewalk_cell()
+        
+        if bld.name == "Food Warehouse":
+            campus_map.add_cell_type(building_special_cell[0], building_special_cell[1], CELL_TYPES.RESTUARANT_PICKUP)
+        else:
+            campus_map.add_cell_type(building_special_cell[0], building_special_cell[1], CELL_TYPES.BUILDING_DROP_OFF)
+
 
     return campus_map

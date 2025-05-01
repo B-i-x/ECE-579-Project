@@ -1,13 +1,15 @@
 # src/BearDownBots/config.py
 
 class Config:
-    TIME_SCALE = 1 ## time scale for the simulation (1 = real time, 2 = twice as fast, etc.)
+    TIME_SCALE = 0.2 ## time scale for the simulation (1 = real time, 2 = twice as fast, etc.)
     
     class GUI:
         # general
         WINDOW_WIDTH_PIXELS  = 800 ## width of the window in pixels
         WINDOW_HEIGHT_PIXELS = 600 ## height of the window in pixels
-
+        ROBOT_ZOOM_FACTOR = 3 ## zoom factor for the robot images (1 = normal size, 0.5 = half size, etc.)
+        CAMPUS_MAP_ZOOM = 1 ## zoom factor for the campus map (1 = normal size, 0.5 = half size, etc.)
+        
     class Environment:
         # environment
         MAP_ROWS  = 2000 ## number of rows in the map
@@ -16,6 +18,11 @@ class Config:
         MIN_BUILDING_CELLS = 75 ## minimum number of cells a building can occupy
         MAX_BUILDING_CELLS = 200 ## maximum number of cells a building can occupy
         OBSTACLES_AS_PERCENTAGE_OF_WALKWAYS = 0.002 ## percentage is in decimal form (0.002 = 0.2%)
+
+    class Simulation:
+        # simulation
+        NUM_ROBOTS = 3
+        ORDER_FREQUENCY = 0.1
 
     def get_asset_dir():
         # Get the directory of the assets folder

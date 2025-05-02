@@ -23,6 +23,8 @@ class Building:
 
         self.order = None  # Placeholder for order object
 
+        self.dropoff_point = None
+
     def get_center_coords(self):
         """
         Get the center coordinates based on top left coordiantes and its height and width
@@ -39,7 +41,10 @@ class Building:
         """
         if not self.sidewalk_cells:
             raise ValueError("No sidewalk cells available.")
-        return random.choice(self.sidewalk_cells)
+        
+        self.dropoff_point = random.choice(self.sidewalk_cells)
+        return self.dropoff_point
+    
     
     def place_order(self):
         """
@@ -47,7 +52,7 @@ class Building:
         """
         self.order = Order(self)  # Placeholder for order generation logic
         # Placeholder for order placement logic
-        print(f"Order placed in {self.name}: {self.order}")
+        # print(f"Order placed in {self.name}: {self.order}")
 
         return self.order
     
@@ -120,6 +125,7 @@ class HollowSquareBuilding(Building):
         thickness: int | None = None
     ):
         t = thickness if thickness is not None else type(self).thickness
+        self.thickness = t
 
         # side must be ≥ 2·t+1 for an inner empty area
         min_side_by_shape = 2 * t + 1
@@ -143,7 +149,26 @@ class HollowSquareBuilding(Building):
 
         super().__init__(cells, side, side)
 
+    def get_random_sidewalk_cell(self) -> tuple[int, int]:
+        """
+        Exclude any sidewalk cell that falls entirely within the inner hollow region.
+        """
+        if not self.sidewalk_cells:
+            raise ValueError("No sidewalk cells available.")
 
+        valid = []
+        for dr, dc in self.sidewalk_cells:
+            # if it's in the hollow interior, skip it
+            if self.thickness <= dr < self.h - self.thickness and \
+               self.thickness <= dc < self.w - self.thickness:
+                continue
+            valid.append((dr, dc))
+
+        if not valid:
+            raise ValueError("No exterior sidewalk cells available.")
+
+        return random.choice(valid)
+    
 class TrapezoidBuilding(Building):
     """
     A trapezoid: top width vs bottom width interpolate over height.

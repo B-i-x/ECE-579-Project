@@ -4,7 +4,6 @@ from BearDownBots.static.map import Map
 from BearDownBots.config import Config
 from BearDownBots.static.buildings import Building
 from BearDownBots.static.cell import CELL_TYPES
-from BearDownBots.dynamic.restaurant import Restaurant
 from BearDownBots.render.loading import ProgressWindow
 
 

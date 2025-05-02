@@ -37,7 +37,7 @@ class OrderPlacer:
         # Otherwise pick & place
         building = random.choice(self.buildings)
         order = building.place_order()
-        print(f"[OrderPlacer] Placed {order} at {building.name}")
+        # print(f"[OrderPlacer] Placed {order} at {building.name}")
 
         self.orders.append((building, order))
         return self.orders

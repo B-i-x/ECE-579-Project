@@ -6,11 +6,13 @@ from BearDownBots.dynamic.robot import Robot
 from BearDownBots.config import Config
 from BearDownBots.render.campus import CampusRenderer
 
-class RestaurantDashboardRenderer:
-    def __init__(self, parent_frame: tk.Frame):
-        self.parent = parent_frame
 
-        self.robot_label : list[tk.Label] = []
+class RestaurantDashboardRenderer:
+    def __init__(self, parent):
+        self.parent = parent
+        self.robots = None
+        self.robot_label = []
+        self.order_queue = []  # no longer used for display, but you can keep if needed
 
     def add_robots(self, robots):
         """
@@ -38,24 +40,65 @@ class RestaurantDashboardRenderer:
                 font=("Arial", 14)
             )
             lbl.pack(anchor='w', pady=2)
-
             self.robot_label.append(lbl)
-            
 
-        # --- separator & orders below (unchanged) ---
+        # --- separator & orders below ---
         separator = ttk.Separator(self.parent, orient='horizontal')
         separator.pack(fill='x', padx=10, pady=5)
 
         self.order_frame = tk.Frame(self.parent, bg="lightgrey")
-        self.order_frame.pack(fill='x', padx=10, pady=(5, 10))
+        self.order_frame.pack(fill='both', expand=True, padx=10, pady=(5, 10))
 
+        # Order count
         self.order_count_label = tk.Label(
             self.order_frame,
             text="Orders Placed: 0",
             bg="lightgrey",
             font=("Arial", 14)
         )
-        self.order_count_label.pack(side=tk.LEFT, padx=5, pady=5)
+        self.order_count_label.pack(anchor='w', padx=5, pady=(0,5))
+
+        # Container for the list of orders
+        self.orders_list_frame = tk.Frame(self.order_frame, bg="white", bd=1, relief="sunken")
+        self.orders_list_frame.pack(fill='both', expand=True, padx=5, pady=5)
+
+    def update_order_labels(self):
+        """
+        Call this AFTER you've called your scheduler’s load_order_into_robots().
+        It will:
+          1) update the total count
+          2) re-draw every robot→order under the count
+        """
+        # 1 total orders across all robots
+        total = sum(len(r.orders) for r in self.robots)
+        self.order_count_label.config(text=f"Orders Placed: {total}")
+
+        # 2 clear out old list
+        for widget in self.orders_list_frame.winfo_children():
+            widget.destroy()
+
+        # 3 repopulate
+        for robot in self.robots:
+            if not robot.orders:
+                continue
+            # Robot header
+            hdr = tk.Label(
+                self.orders_list_frame,
+                text=f"{robot} ({len(robot.orders)}):",
+                bg="lightgrey",
+                font=("Arial", 12, "bold")
+            )
+            hdr.pack(anchor='w', padx=5, pady=(5,0))
+
+            # their orders
+            for order in robot.orders:
+                lbl = tk.Label(
+                    self.orders_list_frame,
+                    text=f"  • {order}",
+                    bg="white",
+                    font=("Arial", 11)
+                )
+                lbl.pack(anchor='w', padx=15, pady=1)
 
     def setup_robot_click_event(self):
         """

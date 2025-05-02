@@ -16,6 +16,7 @@ class Robot:
 
         self.position = Position(0, 0)
         self.previous_position = Position(0, 0)
+        self.restaurant_pickup_point : Position = None 
         self.next_direction_to_move = None  # Direction to move next
 
         self.a_star_path = []  # List of cells to traverse
@@ -31,7 +32,7 @@ class Robot:
                 px, py = cell.position.x, cell.position.y
                 self.position = Position(px, py)
                 self.previous_position = Position(px, py)
-
+                self.restaurant_pickup_point = Position(px, py)
                 cell.add_type(CELL_TYPES.ROBOT)
                 print(f"Placed robot {self.id} at {self.position}")
                 return

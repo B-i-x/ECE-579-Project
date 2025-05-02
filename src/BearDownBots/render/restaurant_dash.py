@@ -18,11 +18,12 @@ class RestaurantDashboardRenderer:
         """
         self.robots : list[Robot] = robots
 
-    def add_campus_renderer(self, campus_renderer: CampusRenderer):
+    def add_campus_renderer_data(self, campus_renderer_obj, renderer_data):
         """
         Add the campus renderer to the restaurant dashboard.
         """
-        self.campus_renderer : CampusRenderer = campus_renderer
+        self.campus_renderer_obj = campus_renderer_obj
+        self.renderer_data = renderer_data
 
     def render(self):
         # --- top: robot labels ---
@@ -71,28 +72,53 @@ class RestaurantDashboardRenderer:
             self._on_robot_clicked(robot)
         return handler
 
+    def update_robot_labels(self):
+        """
+        Update the robot labels with their current positions.
+        """
+
+        for robot in self.robots:
+            # --- new label-update logic ---
+            try:
+                idx = self.robots.index(robot)
+                selected_lbl = self.robot_label[idx]
+
+                # 1) Refresh its text in case robot.__str__ shows updated info
+                selected_lbl.config(text=str(robot))
+
+                # 2) Highlight the selected label and reset others
+                for lbl in self.robot_label:
+                    lbl.config(bg="lightgrey")
+                selected_lbl.config(bg="lightblue")
+
+            except ValueError:
+                # robot wasn’t found in the list—ignore
+                pass
+
+            
     def _on_robot_clicked(self, robot: Robot):
         """
         Center the campus view on robot.position at ROBOT_ZOOM_FACTOR scale,
         then re-render the campus map, clamping each axis only when needed.
         """
-        cam         = self.campus_renderer
-        base        = cam._base_image
-        cw, ch      = cam.canvas_w, cam.canvas_h
+        cam   = self.campus_renderer_obj
+        data  = self.renderer_data
+        base  = cam._base_image
+        cw, ch = cam.canvas_w, cam.canvas_h
         target_zoom = Config.GUI.ROBOT_ZOOM_FACTOR
 
         # 1) Apply zoom change first, if needed
-        if cam.zoom != target_zoom:
-            cam.zoom = target_zoom
-            new_w = int(base.width  * target_zoom)
-            new_h = int(base.height * target_zoom)
+        if data.zoom != target_zoom:
+            data.zoom = target_zoom
+            new_w = int(base.width  * data.zoom)
+            new_h = int(base.height * data.zoom)
             cam._scaled_image = base.resize((new_w, new_h), Image.NEAREST)
 
         # 2) Map robot cell → pixel in the scaled image
         cell_x   = robot.position.y   # or .col
         cell_y   = robot.position.x   # or .row
-        robot_px = cell_x * cam.zoom
-        robot_py = cell_y * cam.zoom
+        robot_px = cell_x * data.zoom
+        robot_py = cell_y * data.zoom
 
         # 3) Compute raw offsets to center the robot
         raw_off_x = robot_px - cw / 2
@@ -105,18 +131,21 @@ class RestaurantDashboardRenderer:
 
         # 5) Clamp each axis only if there's “room to pan”
         if max_off_x > 0:
-            cam.offset_x = max(0, min(raw_off_x, max_off_x))
+            data.offset_x = max(0, min(raw_off_x, max_off_x))
         else:
-            # map is narrower or exactly fits: just left-align
-            cam.offset_x = 0
+            data.offset_x = 0
 
         if max_off_y > 0:
-            cam.offset_y = max(0, min(raw_off_y, max_off_y))
+            data.offset_y = max(0, min(raw_off_y, max_off_y))
         else:
-            # map is shorter or exactly fits: top-align
-            cam.offset_y = 0
+            data.offset_y = 0
 
-        # 6) Finally redraw
+        # 6) Push the updated values back onto the renderer
+        cam.zoom     = data.zoom
+        cam.offset_x = data.offset_x
+        cam.offset_y = data.offset_y
+
+        # 7) Finally redraw
         cam.render()
 
 

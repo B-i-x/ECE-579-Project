@@ -98,7 +98,7 @@ class Robot:
         self.previous_position = old_pos
         self.position = new_pos
 
-        print(f"Moving robot {self.id} from {old_pos} to {new_pos} in direction {self.next_direction_to_move}")
+        # print(f"Moving robot {self.id} from {old_pos} to {new_pos} in direction {self.next_direction_to_move}")
 
         # 4) update the map‐cell types
         self.map.get_cell(old_pos.x, old_pos.y).remove_type(CELL_TYPES.ROBOT)

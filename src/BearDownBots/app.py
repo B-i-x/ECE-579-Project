@@ -75,6 +75,7 @@ class BearDownBotsApp():
             bot.act()
 
         self.renderer.robot_renderer.render_robots(self.robots)
+        self.renderer.restaurant_dash.update_robot_labels()
         # this is like the window.update() call in a GUI loop
         # 3) Schedule the next step in ~16ms (about 60 updates/sec)
         self.renderer.after(

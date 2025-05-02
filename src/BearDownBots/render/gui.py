@@ -74,7 +74,7 @@ class GuiWrapper(tk.Tk):
 
         self.robot_renderer = RobotRenderer(self.campus_renderer.canvas, self.campus_render_data)
 
-        self.restaurant_dash.add_campus_renderer(self.campus_renderer)
+        self.restaurant_dash.add_campus_renderer_data(self.campus_renderer, self.campus_render_data)
         self.restaurant_dash.render()
         self.restaurant_dash.setup_robot_click_event()
         

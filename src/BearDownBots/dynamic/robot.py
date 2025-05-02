@@ -34,7 +34,7 @@ class Robot:
                 self.previous_position = Position(px, py)
                 self.restaurant_pickup_point = Position(px, py)
                 cell.add_type(CELL_TYPES.ROBOT)
-                print(f"Placed robot {self.id} at {self.position}")
+                # print(f"Placed robot {self.id} at {self.position}")
                 return
             
 

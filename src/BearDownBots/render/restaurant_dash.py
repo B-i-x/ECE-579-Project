@@ -149,7 +149,7 @@ class RestaurantDashboardRenderer:
         """
         Bind the robot label to a click event that centers the campus view on the robot's position.
         """
-        print(f"Robot labels are {self.robot_label}")
+        # print(f"Robot labels are {self.robot_label}")
         # Bind the click event to the robot label
         for robot_index, lbl in enumerate(self.robot_label):
             handler = self._make_robot_click_handler(self.robots[robot_index])
@@ -197,7 +197,7 @@ class RestaurantDashboardRenderer:
         ch = cam.canvas.winfo_height()
         cam.canvas_w = cw
         cam.canvas_h = ch
-        
+
         target_zoom = Config.GUI.ROBOT_ZOOM_FACTOR
 
         # 1) Apply zoom change first, if needed

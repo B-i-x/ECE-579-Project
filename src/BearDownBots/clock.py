@@ -1,17 +1,22 @@
 import time
+from BearDownBots.config import Config
 
 class SimulationClock:
     def __init__(self):
+        # read the global scale factor
+        self.time_scale = Config.Simulation.TIME_SCALE  
         self._last_real = time.perf_counter()
-        self.sim_time   = 0.0  # accumulated simulation time (in real seconds)
+        self.sim_time   = 0.0  # accumulated simulation time (in sim-seconds)
 
     def tick(self) -> float:
         """
-        Call each frame. Returns the real_dt (seconds of real time that passed).
+        Call each frame. Returns sim_dt (seconds of simulation time that passed),
+        which is real_dt multiplied by Config.Simulation.TIME_SCALE.
         """
         now     = time.perf_counter()
         real_dt = now - self._last_real
         self._last_real = now
 
-        self.sim_time += real_dt
-        return real_dt
+        sim_dt = real_dt * self.time_scale
+        self.sim_time += sim_dt
+        return sim_dt

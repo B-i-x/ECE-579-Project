@@ -21,9 +21,10 @@ class Config:
     class Simulation:
         # simulation
         NUM_ROBOTS = 3
-        NEW_ORDER_INTERVAL = 60 ## time interval in seconds between new orders
         TIME_SCALE = 0.5 ## time scale for the simulation (1 = real time, 2 = twice as fast, etc.)
-        UPDATES_PER_SEC = 60    
+        UPDATES_PER_SEC = 60
+        NEW_ORDER_INTERVAL = 10 * TIME_SCALE ## time interval in seconds between new orders
+    
 
     def get_asset_dir():
         # Get the directory of the assets folder

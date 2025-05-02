@@ -192,7 +192,12 @@ class RestaurantDashboardRenderer:
         cam   = self.campus_renderer_obj
         data  = self.renderer_data
         base  = cam._base_image
-        cw, ch = cam.canvas_w, cam.canvas_h
+        # --- pull live widget size and update renderer ---
+        cw = cam.canvas.winfo_width()
+        ch = cam.canvas.winfo_height()
+        cam.canvas_w = cw
+        cam.canvas_h = ch
+        
         target_zoom = Config.GUI.ROBOT_ZOOM_FACTOR
 
         # 1) Apply zoom change first, if needed
@@ -227,11 +232,6 @@ class RestaurantDashboardRenderer:
             data.offset_y = max(0, min(raw_off_y, max_off_y))
         else:
             data.offset_y = 0
-
-        # 6) Push the updated values back onto the renderer
-        cam.zoom     = data.zoom
-        cam.offset_x = data.offset_x
-        cam.offset_y = data.offset_y
 
         # 7) Finally redraw
         cam.render()

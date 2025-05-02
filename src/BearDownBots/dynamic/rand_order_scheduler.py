@@ -6,6 +6,7 @@ from typing import Sequence
 from BearDownBots.static.buildings import Building
 from BearDownBots.config import Config
 from BearDownBots.dynamic.robot import Robot
+from BearDownBots.clock import SimulationClock
 
 class OrderPlacer:
     """
@@ -13,10 +14,11 @@ class OrderPlacer:
     Call   scheduler.update(dt)   once per frame with dt = simulation-seconds elapsed.
     """
     def __init__(self,
-                 buildings,          
+                 buildings,
+                 timer : SimulationClock,          
                  ):
         self.buildings : list[Building] = buildings
-
+        self.timer : SimulationClock = timer
         self.orders : list[Order] = []  # List to store placed orders
 
     def place_new_order(self) -> Order | None:

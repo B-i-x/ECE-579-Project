@@ -114,6 +114,7 @@ class SquareBuilding(Building):
         super().__init__(cells, side, side)
 
 
+
 class HollowSquareBuilding(Building):
     likelihood = 0.5
     thickness: int = 3
@@ -149,20 +150,25 @@ class HollowSquareBuilding(Building):
 
         super().__init__(cells, side, side)
 
+        # now store the inner “hole” offsets for easy exclusion later
+        self.inner_cells = [
+            (dr, dc)
+            for dr in range(t, side - t)
+            for dc in range(t, side - t)
+        ]
+
     def get_random_sidewalk_cell(self) -> tuple[int, int]:
         """
-        Exclude any sidewalk cell that falls entirely within the inner hollow region.
+        Pick a sidewalk cell, but never one that lies in the hollow interior.
         """
         if not self.sidewalk_cells:
             raise ValueError("No sidewalk cells available.")
 
-        valid = []
-        for dr, dc in self.sidewalk_cells:
-            # if it's in the hollow interior, skip it
-            if self.thickness <= dr < self.h - self.thickness and \
-               self.thickness <= dc < self.w - self.thickness:
-                continue
-            valid.append((dr, dc))
+        # filter out any sidewalk cell that's in the inner hole
+        valid = [
+            cell for cell in self.sidewalk_cells
+            if cell not in self.inner_cells
+        ]
 
         if not valid:
             raise ValueError("No exterior sidewalk cells available.")

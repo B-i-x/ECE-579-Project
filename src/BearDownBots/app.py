@@ -36,7 +36,7 @@ class BearDownBotsApp():
 
         self.environment = create_campus_environment(self.progress_window)
 
-        self.order_scheduler = OrderPlacer(self.environment.buildings)
+        self.order_scheduler = OrderPlacer(self.environment.buildings, self.sim_clock)
 
         self.robots = [Robot(count, self.environment) for count in range(Config.Simulation.NUM_ROBOTS)]
 
@@ -78,8 +78,7 @@ class BearDownBotsApp():
             bot.act()
 
         self.renderer.robot_renderer.render_robots(self.robots)
-        self.renderer.restaurant_dash.update_robot_labels()
-        self.renderer.restaurant_dash.update_order_labels()
+        self.renderer.restaurant_dash.update()
         # this is like the window.update() call in a GUI loop
         # 3) Schedule the next step in ~16ms (about 60 updates/sec)
         self.renderer.after(

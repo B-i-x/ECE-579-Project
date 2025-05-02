@@ -21,7 +21,7 @@ class Config:
     class Simulation:
         # simulation
         NUM_ROBOTS = 3
-        ORDER_FREQUENCY = 0.1
+        NEW_ORDER_INTERVAL = 60 ## time interval in seconds between new orders
         TIME_SCALE = 0.5 ## time scale for the simulation (1 = real time, 2 = twice as fast, etc.)
         UPDATES_PER_SEC = 60    
 

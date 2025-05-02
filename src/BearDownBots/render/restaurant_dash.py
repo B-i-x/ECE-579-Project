@@ -58,9 +58,54 @@ class RestaurantDashboardRenderer:
         )
         self.order_count_label.pack(anchor='w', padx=5, pady=(0,5))
 
-        # Container for the list of orders
-        self.orders_list_frame = tk.Frame(self.order_frame, bg="white", bd=1, relief="sunken")
-        self.orders_list_frame.pack(fill='both', expand=True, padx=5, pady=5)
+        # === scrollable orders list ===
+        scroll_frame = tk.Frame(self.order_frame)
+        scroll_frame.pack(fill='both', expand=True, padx=5, pady=5)
+
+        # Canvas
+        self.orders_canvas = tk.Canvas(
+            scroll_frame,
+            bg="white",
+            bd=0,
+            highlightthickness=0
+        )
+        # Scrollbars
+        self.v_scroll = ttk.Scrollbar(
+            scroll_frame,
+            orient='vertical',
+            command=self.orders_canvas.yview
+        )
+        self.h_scroll = ttk.Scrollbar(
+            scroll_frame,
+            orient='horizontal',
+            command=self.orders_canvas.xview
+        )
+        # Configure canvas to scroll with them
+        self.orders_canvas.configure(
+            yscrollcommand=self.v_scroll.set,
+            xscrollcommand=self.h_scroll.set
+        )
+
+        # Layout using grid so both scrollbars and canvas align
+        self.orders_canvas.grid(row=0, column=0, sticky='nsew')
+        self.v_scroll.grid(row=0, column=1, sticky='ns')
+        self.h_scroll.grid(row=1, column=0, sticky='ew')
+        scroll_frame.grid_rowconfigure(0, weight=1)
+        scroll_frame.grid_columnconfigure(0, weight=1)
+
+        # Inner frame where you’ll pack the order labels
+        self.orders_list_frame = tk.Frame(self.orders_canvas, bg="white")
+        self.orders_canvas.create_window((0, 0),
+                                         window=self.orders_list_frame,
+                                         anchor='nw')
+
+        # Whenever inner frame grows, update scrollable region
+        self.orders_list_frame.bind(
+            "<Configure>",
+            lambda e: self.orders_canvas.configure(
+                scrollregion=self.orders_canvas.bbox("all")
+            )
+        )
 
     def update_order_labels(self):
         """
@@ -190,6 +235,13 @@ class RestaurantDashboardRenderer:
 
         # 7) Finally redraw
         cam.render()
+
+    def update(self):
+        """
+        Update the restaurant dashboard.
+        """
+        self.update_robot_labels()
+        self.update_order_labels()
 
 
 

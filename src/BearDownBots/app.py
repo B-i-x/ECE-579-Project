@@ -97,5 +97,4 @@ class BearDownBotsApp():
 
 if __name__ == "__main__":
     app = BearDownBotsApp()
-    app.renderer.deiconify()   # Show the window (it starts hidden)
-    app.renderer.mainloop()
+    

@@ -12,6 +12,8 @@ class RestaurantDashboardRenderer:
 
         self.robot_label : list[tk.Label] = []
 
+        self.total_order_count = 0
+
     def add_robots(self, robots):
         """
         Add robots to the restaurant dashboard.
@@ -55,7 +57,26 @@ class RestaurantDashboardRenderer:
             bg="lightgrey",
             font=("Arial", 14)
         )
-        self.order_count_label.pack(side=tk.LEFT, padx=5, pady=5)
+        self.order_count_label.pack(anchor='w', padx=5, pady=(0, 5))
+
+          # --- NEW: Order list display ---
+        self.order_listbox = tk.Listbox(self.order_frame, height=8, width=28, font=("Courier", 10))
+        self.order_listbox.pack(fill='x', padx=5, pady=(0, 5))
+
+    def add_order_to_listbox(self, building_name: str, order_id: str):
+        """
+        Add a single order to the listbox.
+        """
+        self.total_order_count += 1
+
+        if hasattr(self, "order_listbox"):
+            self.order_listbox.insert(0, f"{order_id} -> {building_name}")
+            # Limit to most recent N orders (optional)
+            if self.order_listbox.size() > 15:
+                self.order_listbox.delete(15)
+        
+        if hasattr(self, "order_count_label"):
+            self.order_count_label.config(text=f"Orders Placed: {self.total_order_count}")
 
     def setup_robot_click_event(self):
         """

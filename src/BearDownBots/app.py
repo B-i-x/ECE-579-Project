@@ -69,6 +69,18 @@ class BearDownBotsApp():
 
         self.order_scheduler.place_new_order()
 
+        new_orders = self.order_scheduler.place_new_order()
+
+# Add to listbox if any new orders were placed
+        if new_orders:
+            for building, order in new_orders:
+                order_id = getattr(order, "id", str(order))  # fallback if no .id exists
+                self.renderer.restaurant_dash.add_order_to_listbox(building.name, order_id)
+
+        #  Update the order count based on counter
+        self.renderer.restaurant_dash.order_count_label.config(
+            text=f"Orders Placed: {self.renderer.restaurant_dash.total_order_count}")
+
         self.order_scheduler.load_order_into_robots(self.robots)
         
         for bot in self.robots:
@@ -83,4 +95,7 @@ class BearDownBotsApp():
             self._schedule_next_simulation_step
         )
 
-        
+if __name__ == "__main__":
+    app = BearDownBotsApp()
+    app.renderer.deiconify()   # Show the window (it starts hidden)
+    app.renderer.mainloop()

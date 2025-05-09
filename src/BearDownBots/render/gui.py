@@ -73,7 +73,14 @@ class GuiWrapper(tk.Tk):
         self.campus_renderer.render()
 
         self.robot_renderer = RobotRenderer(self.campus_renderer.canvas, self.campus_render_data)
-
+        self.robot_renderer.render_robots(self.robots)
+        # now re-bind the same events to also redraw robots afterwards
+        canvas = self.campus_renderer.canvas
+        for seq in ('<ButtonPress-1>', '<B1-Motion>', '<MouseWheel>', '<Button-4>', '<Button-5>'):
+            canvas.bind(seq,
+                        lambda e, rr=self.robot_renderer, rs=self.robots: rr.render_robots(rs),
+                        add='+')
+    
         self.restaurant_dash.add_campus_renderer_data(self.campus_renderer, self.campus_render_data)
         self.restaurant_dash.render()
         self.restaurant_dash.setup_robot_click_event()

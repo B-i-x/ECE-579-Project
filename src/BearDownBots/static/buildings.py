@@ -23,6 +23,8 @@ class Building:
 
         self.order = None  # Placeholder for order object
 
+        self.dropoff_point = None
+
     def get_center_coords(self):
         """
         Get the center coordinates based on top left coordiantes and its height and width
@@ -39,7 +41,10 @@ class Building:
         """
         if not self.sidewalk_cells:
             raise ValueError("No sidewalk cells available.")
-        return random.choice(self.sidewalk_cells)
+        
+        self.dropoff_point = random.choice(self.sidewalk_cells)
+        return self.dropoff_point
+    
     
     def place_order(self):
         """
@@ -47,7 +52,7 @@ class Building:
         """
         self.order = Order(self)  # Placeholder for order generation logic
         # Placeholder for order placement logic
-        print(f"Order placed in {self.name}: {self.order}")
+        # print(f"Order placed in {self.name}: {self.order}")
 
         return self.order
     
@@ -109,6 +114,7 @@ class SquareBuilding(Building):
         super().__init__(cells, side, side)
 
 
+
 class HollowSquareBuilding(Building):
     likelihood = 0.5
     thickness: int = 3
@@ -120,6 +126,7 @@ class HollowSquareBuilding(Building):
         thickness: int | None = None
     ):
         t = thickness if thickness is not None else type(self).thickness
+        self.thickness = t
 
         # side must be ≥ 2·t+1 for an inner empty area
         min_side_by_shape = 2 * t + 1
@@ -143,7 +150,31 @@ class HollowSquareBuilding(Building):
 
         super().__init__(cells, side, side)
 
+        # now store the inner “hole” offsets for easy exclusion later
+        self.inner_cells = [
+            (dr, dc)
+            for dr in range(t, side - t)
+            for dc in range(t, side - t)
+        ]
 
+    def get_random_sidewalk_cell(self) -> tuple[int, int]:
+        """
+        Pick a sidewalk cell, but never one that lies in the hollow interior.
+        """
+        if not self.sidewalk_cells:
+            raise ValueError("No sidewalk cells available.")
+
+        # filter out any sidewalk cell that's in the inner hole
+        valid = [
+            cell for cell in self.sidewalk_cells
+            if cell not in self.inner_cells
+        ]
+
+        if not valid:
+            raise ValueError("No exterior sidewalk cells available.")
+
+        return random.choice(valid)
+    
 class TrapezoidBuilding(Building):
     """
     A trapezoid: top width vs bottom width interpolate over height.

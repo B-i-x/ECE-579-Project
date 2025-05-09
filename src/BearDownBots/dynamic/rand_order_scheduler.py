@@ -6,6 +6,7 @@ from typing import Sequence
 from BearDownBots.static.buildings import Building
 from BearDownBots.config import Config
 from BearDownBots.dynamic.robot import Robot
+from BearDownBots.clock import SimulationClock
 
 class OrderPlacer:
     """
@@ -13,34 +14,47 @@ class OrderPlacer:
     Call   scheduler.update(dt)   once per frame with dt = simulation-seconds elapsed.
     """
     def __init__(self,
-                 buildings,          
+                 buildings,
+                 timer : SimulationClock,          
                  ):
         self.buildings : list[Building] = buildings
-
+        self.timer : SimulationClock = timer
         self.orders : list[Order] = []  # List to store placed orders
+        self._time_acc    = 0.0     # accumulated sim time since last order
+        self._last_sim_time = timer.sim_time
 
     def place_new_order(self) -> Order | None:
         """
-        With probability Config.Simulation.ORDER_FREQUENCY, pick a random building
-        and place a new order there. Otherwise, do nothing.
-
-        Returns the new Order if one was placed, or None if skipped.
+        Must be called every frame. Internally calls timer.tick() to advance
+        sim-time. Once accumulated sim-time ≥ NEW_ORDER_INTERVAL, places one
+        order and resets the accumulator (minus the interval).
         """
+        # advance sim clock and accumulate
+        # 1) compute how much sim-time has passed since our last invocation
+        current_sim = self.timer.sim_time
+        dt = current_sim - self._last_sim_time
+        self._last_sim_time = current_sim
+
+        # 2) accumulate
+        self._time_acc += dt
+
+        interval = Config.Simulation.NEW_ORDER_INTERVAL
+        if self._time_acc < interval:
+            return None
+
+        # time to place one order—subtract the interval
+        self._time_acc -= interval
+
         if not self.buildings:
             raise RuntimeError("No buildings available to place an order.")
 
-        # Roll the dice
-        if random.random() > Config.Simulation.ORDER_FREQUENCY:
-            # skip placing this time
-            return None
-
-        # Otherwise pick & place
+        # pick & place
         building = random.choice(self.buildings)
         order = building.place_order()
-        print(f"[OrderPlacer] Placed {order} at {building.name}")
 
+        # store and return
         self.orders.append((building, order))
-        return self.orders
+        return order
     
     def load_order_into_robots(self, robots: list[Robot]):
         """

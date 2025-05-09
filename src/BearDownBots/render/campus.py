@@ -108,48 +108,6 @@ class CampusRenderer:
 
         self._base_image = img
 
-    def update_robot_positions(self, robots: list[Robot]):
-        """
-        Batch‐update the 1px=1cell base image for all robots,
-        then rebuild the scaled image and re‐render.
-        """
-        base_pix = self._base_image.load()
-        z        = self.renderer_data.zoom
-
-        for robot in robots:
-            # --- ERASE old robot pixel ---
-            prev = robot.previous_position
-            if prev is not None:
-                # map row/col → x,y
-                px_old = prev.y
-                py_old = prev.x
-
-                # turn that cell back into a walkway
-                self.campus_map.remove_cell_type(py_old, px_old, CELL_TYPES.ROBOT)
-                self.campus_map.add_cell_type   (py_old, px_old, CELL_TYPES.WALKWAY)
-
-                # grab the walkway color and paint it
-                walkway_rgb = ImageColor.getrgb(CELL_TYPES.WALKWAY.color)
-                base_pix[px_old, py_old] = walkway_rgb
-
-            # --- DRAW new robot pixel ---
-            px_new = robot.position.y
-            py_new = robot.position.x
-            robot_rgb = ImageColor.getrgb(CELL_TYPES.ROBOT.color)
-            base_pix[px_new, py_new] = robot_rgb
-
-            # remember for next frame
-            robot.previous_position = Position(py_new, px_new)
-
-        # --- rebuild the zoomed image and redraw ---
-        base = self._base_image
-        new_size = (int(base.width  * z), int(base.height * z))
-        self._scaled_image = base.resize(new_size, Image.NEAREST)
-
-        print(f"Moved robot {robot.id} to {robot.position}")
-        self.render()
-
-
     def _on_mouse_down(self, event):
         # capture the *current* pixel offset when you start dragging
         self._drag_start = (event.x, event.y, self.renderer_data.offset_x, self.renderer_data.offset_y)
@@ -214,5 +172,5 @@ class CampusRenderer:
         view = self._scaled_image.crop((x0, y0, x1, y1))
         self._tk_image = ImageTk.PhotoImage(view)
 
-        self.canvas.delete('all')
-        self.canvas.create_image(0, 0, anchor='nw', image=self._tk_image)
+        self.canvas.delete("background")
+        self.canvas.create_image(0, 0, anchor='nw', image=self._tk_image, tags=("background",))

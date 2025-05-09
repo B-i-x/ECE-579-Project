@@ -6,11 +6,13 @@ from BearDownBots.dynamic.robot import Robot
 from BearDownBots.config import Config
 from BearDownBots.render.campus import CampusRenderer
 
-class RestaurantDashboardRenderer:
-    def __init__(self, parent_frame: tk.Frame):
-        self.parent = parent_frame
 
-        self.robot_label : list[tk.Label] = []
+class RestaurantDashboardRenderer:
+    def __init__(self, parent):
+        self.parent = parent
+        self.robots = None
+        self.robot_label = []
+        self.order_queue = []  # no longer used for display, but you can keep if needed
 
         self.total_order_count = 0
 
@@ -40,49 +42,117 @@ class RestaurantDashboardRenderer:
                 font=("Arial", 14)
             )
             lbl.pack(anchor='w', pady=2)
-
             self.robot_label.append(lbl)
-            
 
-        # --- separator & orders below (unchanged) ---
+        # --- separator & orders below ---
         separator = ttk.Separator(self.parent, orient='horizontal')
         separator.pack(fill='x', padx=10, pady=5)
 
         self.order_frame = tk.Frame(self.parent, bg="lightgrey")
-        self.order_frame.pack(fill='x', padx=10, pady=(5, 10))
+        self.order_frame.pack(fill='both', expand=True, padx=10, pady=(5, 10))
 
+        # Order count
         self.order_count_label = tk.Label(
             self.order_frame,
             text="Orders Placed: 0",
             bg="lightgrey",
             font=("Arial", 14)
         )
-        self.order_count_label.pack(anchor='w', padx=5, pady=(0, 5))
 
-          # --- NEW: Order list display ---
-        self.order_listbox = tk.Listbox(self.order_frame, height=8, width=28, font=("Courier", 10))
-        self.order_listbox.pack(fill='x', padx=5, pady=(0, 5))
+        self.order_count_label.pack(anchor='w', padx=5, pady=(0,5))
 
-    def add_order_to_listbox(self, building_name: str, order_id: str):
+        # === scrollable orders list ===
+        scroll_frame = tk.Frame(self.order_frame)
+        scroll_frame.pack(fill='both', expand=True, padx=5, pady=5)
+
+        # Canvas
+        self.orders_canvas = tk.Canvas(
+            scroll_frame,
+            bg="white",
+            bd=0,
+            highlightthickness=0
+        )
+        # Scrollbars
+        self.v_scroll = ttk.Scrollbar(
+            scroll_frame,
+            orient='vertical',
+            command=self.orders_canvas.yview
+        )
+        self.h_scroll = ttk.Scrollbar(
+            scroll_frame,
+            orient='horizontal',
+            command=self.orders_canvas.xview
+        )
+        # Configure canvas to scroll with them
+        self.orders_canvas.configure(
+            yscrollcommand=self.v_scroll.set,
+            xscrollcommand=self.h_scroll.set
+        )
+
+        # Layout using grid so both scrollbars and canvas align
+        self.orders_canvas.grid(row=0, column=0, sticky='nsew')
+        self.v_scroll.grid(row=0, column=1, sticky='ns')
+        self.h_scroll.grid(row=1, column=0, sticky='ew')
+        scroll_frame.grid_rowconfigure(0, weight=1)
+        scroll_frame.grid_columnconfigure(0, weight=1)
+
+        # Inner frame where you’ll pack the order labels
+        self.orders_list_frame = tk.Frame(self.orders_canvas, bg="white")
+        self.orders_canvas.create_window((0, 0),
+                                         window=self.orders_list_frame,
+                                         anchor='nw')
+
+        # Whenever inner frame grows, update scrollable region
+        self.orders_list_frame.bind(
+            "<Configure>",
+            lambda e: self.orders_canvas.configure(
+                scrollregion=self.orders_canvas.bbox("all")
+            )
+        )
+
+    def update_order_labels(self):
         """
-        Add a single order to the listbox.
+        Call this AFTER you've called your scheduler’s load_order_into_robots().
+        It will:
+          1) update the total count
+          2) re-draw every robot→order under the count
         """
-        self.total_order_count += 1
+        # 1 total orders across all robots
+        total = sum(len(r.orders) for r in self.robots)
+        self.order_count_label.config(text=f"Orders Placed: {total}")
 
-        if hasattr(self, "order_listbox"):
-            self.order_listbox.insert(0, f"{order_id} -> {building_name}")
-            # Limit to most recent N orders (optional)
-            if self.order_listbox.size() > 15:
-                self.order_listbox.delete(15)
-        
-        if hasattr(self, "order_count_label"):
-            self.order_count_label.config(text=f"Orders Placed: {self.total_order_count}")
+        # 2 clear out old list
+        for widget in self.orders_list_frame.winfo_children():
+            widget.destroy()
+
+        # 3 repopulate
+        for robot in self.robots:
+            if not robot.orders:
+                continue
+            # Robot header
+            hdr = tk.Label(
+                self.orders_list_frame,
+                text=f"{robot} ({len(robot.orders)}):",
+                bg="lightgrey",
+                font=("Arial", 12, "bold")
+            )
+            hdr.pack(anchor='w', padx=5, pady=(5,0))
+
+            # their orders
+            for order in robot.orders:
+                lbl = tk.Label(
+                    self.orders_list_frame,
+                    text=f"  • {order}",
+                    bg="white",
+                    font=("Arial", 11)
+                )
+                lbl.pack(anchor='w', padx=15, pady=1)
 
     def setup_robot_click_event(self):
         """
         Bind the robot label to a click event that centers the campus view on the robot's position.
         """
-        print(f"Robot labels are {self.robot_label}")
+        # print(f"Robot labels are {self.robot_label}")
         # Bind the click event to the robot label
         for robot_index, lbl in enumerate(self.robot_label):
             handler = self._make_robot_click_handler(self.robots[robot_index])
@@ -125,7 +195,12 @@ class RestaurantDashboardRenderer:
         cam   = self.campus_renderer_obj
         data  = self.renderer_data
         base  = cam._base_image
-        cw, ch = cam.canvas_w, cam.canvas_h
+        # --- pull live widget size and update renderer ---
+        cw = cam.canvas.winfo_width()
+        ch = cam.canvas.winfo_height()
+        cam.canvas_w = cw
+        cam.canvas_h = ch
+
         target_zoom = Config.GUI.ROBOT_ZOOM_FACTOR
 
         # 1) Apply zoom change first, if needed
@@ -161,13 +236,15 @@ class RestaurantDashboardRenderer:
         else:
             data.offset_y = 0
 
-        # 6) Push the updated values back onto the renderer
-        cam.zoom     = data.zoom
-        cam.offset_x = data.offset_x
-        cam.offset_y = data.offset_y
-
         # 7) Finally redraw
         cam.render()
+
+    def update(self):
+        """
+        Update the restaurant dashboard.
+        """
+        self.update_robot_labels()
+        self.update_order_labels()
 
 
 

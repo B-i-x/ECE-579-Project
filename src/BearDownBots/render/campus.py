@@ -24,8 +24,8 @@ class CampusRenderer:
         self._drag_start = None
 
         # physical canvas size (pixels)
-        self.canvas_w = int(Config.GUI.WINDOW_WIDTH_PIXELS)
-        self.canvas_h = int(Config.GUI.WINDOW_HEIGHT_PIXELS)
+        self.canvas_w = 0
+        self.canvas_h = 0
         self.offset_x = 0
         self.offset_y = 0
 
@@ -37,21 +37,20 @@ class CampusRenderer:
         self.min_zoom = 0.75
         self.max_zoom = 8.0
 
-        # setup canvas
         self.canvas = tk.Canvas(
             self.parent,
-            width=self.canvas_w,
-            height=self.canvas_h,
             bg='white'
         )
+        self.canvas.pack(fill=tk.BOTH, expand=True)  # ensure it fills its container
+
+        self.parent.add(self.canvas)
+
+        self.canvas.bind("<Configure>", self._on_resize)
+
          # pre‐scale once
         scaled_size      = (int(base_w * self.renderer_data.zoom), int(base_h * self.renderer_data.zoom))
         self._scaled_image = self._base_image.resize(scaled_size, Image.NEAREST)
         self._tk_image     = None
-
-        # setup canvas widget
-        self.canvas = tk.Canvas(parent, width=self.canvas_w, height=self.canvas_h, bg='white')
-        parent.add(self.canvas)
 
         # bind events
         self.canvas.bind('<ButtonPress-1>', self._on_mouse_down)
@@ -59,6 +58,19 @@ class CampusRenderer:
         self.canvas.bind('<MouseWheel>', self._on_mouse_wheel)
         self.canvas.bind('<Button-4>', self._on_mouse_wheel)
         self.canvas.bind('<Button-5>', self._on_mouse_wheel)
+
+        self.render()
+
+    def _on_resize(self, event):
+        self.canvas_w = event.width
+        self.canvas_h = event.height
+
+        # Optionally rebuild scaled image for new canvas
+        new_size = (
+            int(self._base_image.width * self.renderer_data.zoom),
+            int(self._base_image.height * self.renderer_data.zoom)
+        )
+        self._scaled_image = self._base_image.resize(new_size, Image.NEAREST)
 
         self.render()
 

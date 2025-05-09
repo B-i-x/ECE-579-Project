@@ -14,6 +14,8 @@ class RestaurantDashboardRenderer:
         self.robot_label = []
         self.order_queue = []  # no longer used for display, but you can keep if needed
 
+        self.total_order_count = 0
+
     def add_robots(self, robots):
         """
         Add robots to the restaurant dashboard.
@@ -56,6 +58,7 @@ class RestaurantDashboardRenderer:
             bg="lightgrey",
             font=("Arial", 14)
         )
+
         self.order_count_label.pack(anchor='w', padx=5, pady=(0,5))
 
         # === scrollable orders list ===

@@ -1,7 +1,6 @@
 import random
 from typing import List
 
-
 class Menu:
     """Holds the available items on the menu."""
     mains = [

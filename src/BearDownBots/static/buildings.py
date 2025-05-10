@@ -173,7 +173,8 @@ class HollowSquareBuilding(Building):
         if not valid:
             raise ValueError("No exterior sidewalk cells available.")
 
-        return random.choice(valid)
+        self.dropoff_point = random.choice(valid)
+        return self.dropoff_point
     
 class TrapezoidBuilding(Building):
     """

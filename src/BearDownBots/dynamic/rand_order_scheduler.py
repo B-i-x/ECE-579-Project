@@ -45,11 +45,17 @@ class OrderPlacer:
         # time to place one order—subtract the interval
         self._time_acc -= interval
 
-        if not self.buildings:
-            raise RuntimeError("No buildings available to place an order.")
+        candidates = [b for b in self.buildings if b.name != "Food Warehouse"]
+
+        if not candidates:
+            raise RuntimeError("No valid buildings to choose from!")
+
+        building = random.choice(candidates)
 
         # pick & place
         building = random.choice(self.buildings)
+
+        
         order = building.place_order()
 
         # store and return
@@ -58,14 +64,30 @@ class OrderPlacer:
     
     def load_order_into_robots(self, robots: list[Robot]):
         """
-        Load the orders into the robots. For now this just loads an order into the robot with the least amount of orders.
+        Load orders into any robot that is both at the restaurant pickup
+        point *and* has the fewest orders.  Any order for which no robot
+        is at the pickup point remains in self.orders (unassigned).
         """
+        unassigned: list[tuple[Building, Order]] = []
 
-        for building, order in self.orders:    
-            # Find the robot with the least number of orders
-            robot = min(robots, key=lambda r: len(r.orders))
-            robot.add_order(order)
-            # print(f"[OrderPlacer] Loaded {order} into {robot}")
-        
-        self.orders.clear()  # Clear orders after loading into robots
+        for building, order in self.orders:
+            # find all robots currently waiting at the restaurant
+            available = [
+                r for r in robots
+                if r.position == r.restaurant_pickup_point
+            ]
+
+            if not available:
+                # no one at pickup → leave this order unassigned
+                unassigned.append((building, order))
+                continue
+
+            # among those at the pickup, pick the one with fewest orders
+            chosen = min(available, key=lambda r: len(r.orders))
+            chosen.add_order(order)
+            print(f"[OrderPlacer] Loaded {order} into {chosen}")
+
+        # keep only the orders that we were unable to load
+        self.orders = unassigned
+
         

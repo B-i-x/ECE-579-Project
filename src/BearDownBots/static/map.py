@@ -1,9 +1,9 @@
 from __future__ import annotations          # <-- add once at top of file
-from typing import Optional, TYPE_CHECKING
+from typing import Optional
 
-if TYPE_CHECKING:                           # forward-refs to avoid circular import at runtime
-    from BearDownBots.dynamic.restaurant import Restaurant
-    from BearDownBots.dynamic.rand_order_scheduler import RandomOrderScheduler
+# if TYPE_CHECKING:                           # forward-refs to avoid circular import at runtime
+#     from BearDownBots.dynamic.restaurant import Restaurant
+#     from BearDownBots.dynamic.rand_order_scheduler import RandomOrderScheduler
 
 from BearDownBots.static.cell import Cell, CELL_TYPES, OBSTACLE_TYPES
 from BearDownBots.static.buildings import Building
@@ -22,8 +22,8 @@ class Map:
         self.buildings : list[Building] = []  # list of buildings placed on the map
         self.walkways = []  # list of walkways placed on the map
 
-        self.restaurant: Optional['Restaurant'] = None
-        self.order_scheduler: Optional['RandomOrderScheduler'] = None
+        self.restaurant = None
+        self.order_scheduler = None
 
     def create_empty_map(self):
         """
@@ -107,7 +107,7 @@ class Map:
                     continue
                 if (ax, ay) in inner_global:
                     continue
-                
+
                 if 0 <= ax < self.rows and 0 <= ay < self.cols:
                     cell = self.get_cell(ax, ay)
                     if cell.has_type(CELL_TYPES.GROUND):

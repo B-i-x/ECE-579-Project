@@ -27,6 +27,8 @@ class Robot:
 
         self.orders : list[Order] = []  # List of orders assigned to the robot
 
+        self.state = "idle"   # one of: "delivering", "returning", "idle"
+
         self.place_self_on_restaurant()
 
     def place_self_on_restaurant(self):
@@ -41,16 +43,20 @@ class Robot:
                 # print(f"Placed robot {self.id} at {self.position}")
                 return
             
-    def a_star(self) -> list[Cell]:
+    def a_star(self, raw_start, raw_goal) -> list[Cell]:
         """
         Find a path along WALKWAY cells from restaurant_pickup_point to dropoff_point.
         Sets self.next_direction_to_move to the first step’s direction.
         """
-        raw_start = self.restaurant_pickup_point
-        raw_goal  = self.dropoff_point
+        # raw_start = self.restaurant_pickup_point
+        # raw_goal  = self.dropoff_point
 
-        if raw_start is None or raw_goal is None:
-            print(f"Robot {self.id} has no start or goal position.")
+        if raw_start is None:
+            print(f"Robot {self.id} has no start position.")
+            return []
+        
+        if raw_goal is None:
+            print(f"Robot {self.id} has no goal position.")
             return []
 
         # Ensure we have Position instances
@@ -109,8 +115,8 @@ class Robot:
 
                 self.a_star_path = path_pos[1:]   # drop the start—these are the next steps
 
-                print(f"Robot {self.id} found a path from {start} to {goal} with {len(path_cells)} cells.")
-                print(f"Robot {self.id} moving from {start} to {goal} in direction {self.next_direction_to_move}")
+                # print(f"Robot {self.id} found a path from {start} to {goal} with {len(path_cells)} cells.")
+                # print(f"Robot {self.id} moving from {start} to {goal} in direction {self.next_direction_to_move}")
                 return path_cells
 
             closed.add(current)
@@ -134,12 +140,10 @@ class Robot:
                     f_score           = tentative_g + h(nbr, goal)
                     heapq.heappush(open_heap, (f_score, next(counter), nbr))
 
-        print(f"Robot {self.id} failed to find a path from {start} to {goal}.")
+        # print(f"Robot {self.id} failed to find a path from {start} to {goal}.")
         # no path found
         self.next_direction_to_move = None
         return []
-
-        
 
         
     def move(self):
@@ -177,10 +181,19 @@ class Robot:
         """
         # Placeholder for adding an order to the robot's task list
         self.orders.append(order)
-        
-        self.dropoff_point = order.building.dropoff_point
 
-        self.a_star()
+        if self.state == "idle":
+            self._start_next_delivery()
+
+    def _start_next_delivery(self):
+        # pop the next order off the queue (but keep it for removal on arrival)
+        next_order = self.orders[0]
+        raw_dropoff = next_order.building.dropoff_point
+
+        self.dropoff_point = Position(*raw_dropoff) if isinstance(raw_dropoff, tuple) else raw_start
+        
+        self.state         = "delivering"
+        self.a_star(self.restaurant_pickup_point, self.dropoff_point)       # plan path to dropoff_point
 
 
     def act(self):
@@ -189,6 +202,32 @@ class Robot:
         """
 
         self.move()
+
+        # 2) did we just arrive?
+        print(f"type of self.position is {type(self.position)}")
+        print(f"type of self.dropoff_point is {type(self.dropoff_point)}")
+        if self.position == self.dropoff_point:
+            if self.state == "delivering":
+                print(f"Robot {self.id} arrived at dropoff point {self.dropoff_point}.")
+                # remove the completed order
+                completed = self.orders.pop(0)
+
+                # if there’s another order waiting, go straight to it
+                if self.orders:
+                    self._start_next_delivery()
+                else:
+                    # no more orders → return home
+                    self.state         = "returning"
+                    self.a_star(self.dropoff_point, self.restaurant_pickup_point)  # plan path back to restaurant
+
+            elif self.state == "returning":
+                # we’re home!
+                self.state = "idle"
+                print(f"Robot {self.id} returned to restaurant pickup point {self.restaurant_pickup_point}.")
+                # (you could also clear a_star_path, etc.)
+        else:
+            print(f"Robot {self.id} is still delivering, currently at {self.position}, wants to go to {self.dropoff_point}.")
+            pass
 
     def __str__(self):
         return f"Robot {self.id} at {self.position}"

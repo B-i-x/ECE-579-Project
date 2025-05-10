@@ -204,8 +204,6 @@ class Robot:
         self.move()
 
         # 2) did we just arrive?
-        print(f"type of self.position is {type(self.position)}")
-        print(f"type of self.dropoff_point is {type(self.dropoff_point)}")
         if self.position == self.dropoff_point:
             if self.state == "delivering":
                 print(f"Robot {self.id} arrived at dropoff point {self.dropoff_point}.")
@@ -217,17 +215,17 @@ class Robot:
                     self._start_next_delivery()
                 else:
                     # no more orders → return home
-                    self.state         = "returning"
+                    self.state = "returning"
                     self.a_star(self.dropoff_point, self.restaurant_pickup_point)  # plan path back to restaurant
+                    self.dropoff_point = self.restaurant_pickup_point
+
 
             elif self.state == "returning":
                 # we’re home!
                 self.state = "idle"
                 print(f"Robot {self.id} returned to restaurant pickup point {self.restaurant_pickup_point}.")
                 # (you could also clear a_star_path, etc.)
-        else:
-            print(f"Robot {self.id} is still delivering, currently at {self.position}, wants to go to {self.dropoff_point}.")
-            pass
+    
 
     def __str__(self):
         return f"Robot {self.id} at {self.position}"

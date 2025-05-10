@@ -90,11 +90,24 @@ class Map:
                 self.remove_cell_type(x, y, CELL_TYPES.GROUND)
                 self.add_cell_type(x, y, CELL_TYPES.BUILDING)
 
+        # If this building has an inner hole, compute its global coords:
+        if hasattr(building, 'inner_cells'):
+            inner_global = {(x0 + dr, y0 + dc) for dr, dc in building.inner_cells}
+        else:
+            inner_global = set()
+
         # now place sidewalks AND collect their coords
         sidewalk_cells = []
         for dr, dc in building.cells:
             for adj in [(-1,0), (1,0), (0,-1), (0,1)]:
                 ax, ay = x0 + dr + adj[0], y0 + dc + adj[1]
+
+                 # skip out‐of‐bounds or interior‐hole coords
+                if not (0 <= ax < self.rows and 0 <= ay < self.cols):
+                    continue
+                if (ax, ay) in inner_global:
+                    continue
+                
                 if 0 <= ax < self.rows and 0 <= ay < self.cols:
                     cell = self.get_cell(ax, ay)
                     if cell.has_type(CELL_TYPES.GROUND):

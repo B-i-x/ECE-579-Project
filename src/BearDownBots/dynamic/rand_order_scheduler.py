@@ -45,11 +45,17 @@ class OrderPlacer:
         # time to place one order—subtract the interval
         self._time_acc -= interval
 
-        if not self.buildings:
-            raise RuntimeError("No buildings available to place an order.")
+        candidates = [b for b in self.buildings if b.name != "Food Warehouse"]
+
+        if not candidates:
+            raise RuntimeError("No valid buildings to choose from!")
+
+        building = random.choice(candidates)
 
         # pick & place
         building = random.choice(self.buildings)
+
+        
         order = building.place_order()
 
         # store and return

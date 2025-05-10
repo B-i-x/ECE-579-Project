@@ -16,6 +16,8 @@ class RestaurantDashboardRenderer:
 
         self.total_order_count = 0
 
+        self._last_orders_signature: tuple = ()
+
     def add_robots(self, robots):
         """
         Add robots to the restaurant dashboard.
@@ -110,26 +112,34 @@ class RestaurantDashboardRenderer:
             )
         )
 
+    def _compute_signature(self) -> tuple:
+        # e.g. each robot by its id and the tuple of its order-objects
+        return tuple(
+            (robot.id, tuple(id(o) for o in robot.orders))
+            for robot in self.robots
+        )
+    
     def update_order_labels(self):
-        """
-        Call this AFTER you've called your scheduler’s load_order_into_robots().
-        It will:
-          1) update the total count
-          2) re-draw every robot→order under the count
-        """
-        # 1 total orders across all robots
+        # build a cheap signature of current orders
+        sig = self._compute_signature()
+        if sig == self._last_orders_signature:
+            # no change in who has what orders → skip the whole repaint
+            return
+        # otherwise, remember this signature and do the full redraw:
+        self._last_orders_signature = sig
+
+        # 1) update the total count
         total = sum(len(r.orders) for r in self.robots)
         self.order_count_label.config(text=f"Orders Placed: {total}")
 
-        # 2 clear out old list
+        # 2) clear out old list
         for widget in self.orders_list_frame.winfo_children():
             widget.destroy()
 
-        # 3 repopulate
+        # 3) repopulate…
         for robot in self.robots:
             if not robot.orders:
                 continue
-            # Robot header
             hdr = tk.Label(
                 self.orders_list_frame,
                 text=f"{robot} ({len(robot.orders)}):",
@@ -138,11 +148,11 @@ class RestaurantDashboardRenderer:
             )
             hdr.pack(anchor='w', padx=5, pady=(5,0))
 
-            # their orders
             for order in robot.orders:
+                dropoff = order.building.dropoff_point
                 lbl = tk.Label(
                     self.orders_list_frame,
-                    text=f"  • {order}",
+                    text=f"Drop-off at {order.building.name}({dropoff}) → {order}",
                     bg="white",
                     font=("Arial", 11)
                 )

@@ -50,6 +50,7 @@ class Robot:
         raw_goal  = self.dropoff_point
 
         if raw_start is None or raw_goal is None:
+            print(f"Robot {self.id} has no start or goal position.")
             return []
 
         # Ensure we have Position instances
@@ -106,6 +107,10 @@ class Robot:
                 else:
                     self.next_direction_to_move = None
 
+                self.a_star_path = path_pos[1:]   # drop the start—these are the next steps
+
+                print(f"Robot {self.id} found a path from {start} to {goal} with {len(path_cells)} cells.")
+                print(f"Robot {self.id} moving from {start} to {goal} in direction {self.next_direction_to_move}")
                 return path_cells
 
             closed.add(current)
@@ -129,6 +134,7 @@ class Robot:
                     f_score           = tentative_g + h(nbr, goal)
                     heapq.heappush(open_heap, (f_score, next(counter), nbr))
 
+        print(f"Robot {self.id} failed to find a path from {start} to {goal}.")
         # no path found
         self.next_direction_to_move = None
         return []
@@ -138,36 +144,32 @@ class Robot:
         
     def move(self):
         """
-        Move the robot in its next_direction_to_move,
-        without ever mutating Position in place.
+        Step *along* the precomputed self.a_star_path.
+        Each call pops the next Position and walks there,
+        removing that cell from the front of the path.
         """
-        if self.next_direction_to_move is None:
+        # nothing queued?
+        if not self.a_star_path:
             return
 
-        # 1) stash the old position
-        old_pos = self.position
+        # 1) figure out where to go next
+        next_pos = self.a_star_path.pop(0)  # Position(x,y)
+        old_pos  = self.position
 
-        # 2) compute a brand-new Position
-        if   self.next_direction_to_move == Direction.UP:
-            new_pos = Position(old_pos.x - 1, old_pos.y)
-        elif self.next_direction_to_move == Direction.DOWN:
-            new_pos = Position(old_pos.x + 1, old_pos.y)
-        elif self.next_direction_to_move == Direction.LEFT:
-            new_pos = Position(old_pos.x, old_pos.y - 1)
-        elif self.next_direction_to_move == Direction.RIGHT:
-            new_pos = Position(old_pos.x, old_pos.y + 1)
+        # 2) compute the direction (optional, for your logic)
+        dx = next_pos.x - old_pos.x
+        dy = next_pos.y - old_pos.y
+        if   dx == -1: self.next_direction_to_move = Direction.UP
+        elif dx ==  1: self.next_direction_to_move = Direction.DOWN
+        elif dy == -1: self.next_direction_to_move = Direction.LEFT
+        elif dy ==  1: self.next_direction_to_move = Direction.RIGHT
         else:
+            # somehow not adjacent?
             return
 
-        # 3) update your record
+        # 3) actually step
         self.previous_position = old_pos
-        self.position = new_pos
-
-        # print(f"Moving robot {self.id} from {old_pos} to {new_pos} in direction {self.next_direction_to_move}")
-
-        # 4) update the map‐cell types
-        self.map.get_cell(old_pos.x, old_pos.y).remove_type(CELL_TYPES.ROBOT)
-        self.map.get_cell(new_pos.x, new_pos.y).add_type   (CELL_TYPES.ROBOT)
+        self.position          = next_pos
 
     def add_order(self, order):
         """
@@ -178,11 +180,13 @@ class Robot:
         
         self.dropoff_point = order.building.dropoff_point
 
+        self.a_star()
+
+
     def act(self):
         """
         Perform the robot's action.
         """
-        self.a_star()
 
         self.move()
 

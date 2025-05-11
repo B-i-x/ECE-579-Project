@@ -38,6 +38,7 @@ class BearDownBotsApp():
             self.renderer.add_objects_to_render(
                 campus_map=self.environment,
                 robots=self.robots,
+                scheduler = self.order_scheduler,
                 progress_window=self.progress_window
             )
             self.renderer.user_dash.start_button .configure(command=self.start_simulation)
@@ -89,18 +90,19 @@ class BearDownBotsApp():
         # place new orders
         new_orders = self.order_scheduler.place_new_order()
 
-        if not Config.HEADLESS_FLAG:
-
-            if new_orders:
-                # for b, o in new_orders:
-                #     oid = getattr(o, "id", str(o))
-                #     self.renderer.restaurant_dash.add_order_to_listbox(b.name, oid)
-                self.renderer.restaurant_dash.order_count_label.config(
-                    text=f"Orders Placed: {self.renderer.restaurant_dash.total_order_count}"
-                )
+        # if not Config.HEADLESS_FLAG:
+        #
+        #     if new_orders:
+        #         # for b, o in new_orders:
+        #         #     oid = getattr(o, "id", str(o))
+        #         #     self.renderer.restaurant_dash.add_order_to_listbox(b.name, oid)
+        #         self.renderer.restaurant_dash.order_count_label.config(
+        #             text=f"Orders Placed: {self.renderer.restaurant_dash.total_order_count}"
+        #         )
 
         # assign & move robots
         self.order_scheduler.load_order_into_robots(self.robots)
+
         for bot in self.robots:
             bot.act()
 

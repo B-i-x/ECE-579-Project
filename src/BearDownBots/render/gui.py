@@ -1,6 +1,7 @@
 import tkinter as tk
 
 from BearDownBots.config import Config
+from BearDownBots.dynamic.rand_order_scheduler import OrderPlacer
 
 from BearDownBots.static.map import Map
 
@@ -53,7 +54,8 @@ class GuiWrapper(tk.Tk):
 
     def add_objects_to_render(self, 
                                 campus_map: Map,
-                                robots: list, 
+                                robots: list,
+                                scheduler: OrderPlacer,
                                 progress_window: ProgressWindow = None):
         """
         Add objects to the campus map renderer.
@@ -63,6 +65,7 @@ class GuiWrapper(tk.Tk):
         self.progress_window : ProgressWindow = progress_window
 
         self.restaurant_dash.add_robots(robots)
+        self.restaurant_dash.add_scheduler(scheduler)
 
 
     def setup_dynamic_events(self):

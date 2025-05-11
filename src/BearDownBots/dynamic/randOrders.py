@@ -1,5 +1,6 @@
 import random
 from typing import List
+from enum import Enum
 
 class Menu:
     """Holds the available items on the menu."""
@@ -35,6 +36,11 @@ class Menu:
         "Smoothie", "Milkshake", "Iced Coffee"
     ]
 
+class OrderStatus(Enum):
+    PLACED = "PLACED"  # just arrived from a building
+    PREPARING = "PREPARING"  # kitchen busy – not ready yet
+    READY = "READY"  # cooked, still at warehouse
+    OUT_FOR_DELIVERY = "OUT_FOR_DELIVERY"  # loaded onto a robot
 
 class Order:
     """Represents a single customer order."""
@@ -45,6 +51,8 @@ class Order:
         self.drink = self._choose_drink()
 
         self.building = building
+        self.status = OrderStatus.PLACED
+        self.prep_remaining: float = 0.0
 
     def _choose_main(self) -> str:
         """Randomly choose one main dish."""

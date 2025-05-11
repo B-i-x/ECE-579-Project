@@ -1,7 +1,7 @@
 # src/BearDownBots/config.py
 
 class Config:
-    HEADLESS_FLAG = True ## if True, the GUI will not be displayed
+    HEADLESS_FLAG = False ## if True, the GUI will not be displayed
 
     class GUI:
         # general

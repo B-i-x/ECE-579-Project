@@ -60,7 +60,7 @@ class OrderPlacer:
 
         # store and return
         self.orders.append((building, order))
-        return order
+        return self.orders
     
     def load_order_into_robots(self, robots: list[Robot]):
         """

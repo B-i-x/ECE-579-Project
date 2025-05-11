@@ -52,7 +52,7 @@ class BearDownBotsApp():
     def setup(self):
         """Shared environment and robot initialization."""
         self.sim_clock       = SimulationClock()
-        self.environment     = create_campus_environment(ProgressWindow if not Config.HEADLESS_FLAG else None)
+        self.environment     = create_campus_environment(self.progress_window if not Config.HEADLESS_FLAG else None)
         self.order_scheduler = OrderPlacer(self.environment.buildings, self.sim_clock)
         self.robots = [
             Robot(i, self.environment)
@@ -89,13 +89,15 @@ class BearDownBotsApp():
         # place new orders
         new_orders = self.order_scheduler.place_new_order()
 
-        if not Config.HEADLESS_FLAG and new_orders:
-            for b, o in new_orders:
-                oid = getattr(o, "id", str(o))
-                self.renderer.restaurant_dash.add_order_to_listbox(b.name, oid)
-            self.renderer.restaurant_dash.order_count_label.config(
-                text=f"Orders Placed: {self.renderer.restaurant_dash.total_order_count}"
-            )
+        if not Config.HEADLESS_FLAG:
+
+            if new_orders:
+                # for b, o in new_orders:
+                #     oid = getattr(o, "id", str(o))
+                #     self.renderer.restaurant_dash.add_order_to_listbox(b.name, oid)
+                self.renderer.restaurant_dash.order_count_label.config(
+                    text=f"Orders Placed: {self.renderer.restaurant_dash.total_order_count}"
+                )
 
         # assign & move robots
         self.order_scheduler.load_order_into_robots(self.robots)

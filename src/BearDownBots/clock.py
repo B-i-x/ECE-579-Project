@@ -20,3 +20,6 @@ class SimulationClock:
         sim_dt = real_dt * self.time_scale
         self.sim_time += sim_dt
         return sim_dt
+    
+    def now(self) -> float:
+        return self.sim_time

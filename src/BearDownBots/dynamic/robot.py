@@ -130,6 +130,10 @@ class Robot:
                     continue
 
                 cell = self.map.get_cell(nbr.x, nbr.y)
+                # 1) never walk into obstacles
+                if cell.has_type(CELL_TYPES.OBSTACLE):
+                    continue
+                # 2) only walk on sidewalks
                 if not cell.has_type(CELL_TYPES.WALKWAY):
                     continue
 

@@ -12,8 +12,8 @@ class Config:
         
     class Environment:
         # environment
-        MAP_ROWS  = 500 ## number of rows in the map
-        MAP_COLS  = 500 ## number of columns in the map
+        MAP_ROWS  = 2000 ## number of rows in the map
+        MAP_COLS  = 2000 ## number of columns in the map
         MAX_BUILDING_ATTEMPTS = 100 ## the higher the number, the denser the campus is
         MIN_BUILDING_CELLS = 75 ## minimum number of cells a building can occupy
         MAX_BUILDING_CELLS = 200 ## maximum number of cells a building can occupy

@@ -21,7 +21,7 @@ class OrderPlacer:
         self.timer : SimulationClock = timer
         self.orders : list[tuple[Building, Order]] = []  # List to store placed orders
         self.MAX_PREP = 10
-        self.PREP_SECONDS = 5 * 60
+        self.PREP_SECONDS = 15
         self._time_acc    = 0.0     # accumulated sim time since last order
         self._last_sim_time = timer.sim_time
         self._last_kitch_t = timer.sim_time
@@ -84,6 +84,7 @@ class OrderPlacer:
             waiting = [
                 r for r in robots
                 if r.position == r.restaurant_pickup_point
+                and len(r.orders) < r.MAX_CARRY
             ]
 
             if not waiting:
@@ -91,9 +92,11 @@ class OrderPlacer:
                 continue
 
             chosen = min(waiting, key=lambda r: len(r.orders))
-            chosen.add_order(order)
-            order.status = OrderStatus.OUT_FOR_DELIVERY
-            print(f"[Scheduler] Loaded {order} into {chosen}")
+            if chosen.add_order(order):
+                order.status = OrderStatus.OUT_FOR_DELIVERY
+                print(f"[Scheduler] Loaded {order} into {chosen}")
+            else:
+                unassigned.append((building, order))
 
         # for building, order in self.orders:
         #     # find all robots currently waiting at the restaurant

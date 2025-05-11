@@ -39,7 +39,7 @@ class RobotRenderer:
             self.canvas.create_oval(
                 screen_x - radius, screen_y - radius,
                 screen_x + radius, screen_y + radius,
-                fill=CELL_TYPES.ROBOT.color,
+                fill=robot.colour,
                 outline='',
                 tags=("robot",)
             )

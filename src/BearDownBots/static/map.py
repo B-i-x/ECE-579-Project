@@ -205,11 +205,15 @@ class Map:
         building = random.choice(self.buildings)
         # remove the building type from the cell
         for dr, dc in building.cells:
-            building.name = "Food Warehouse"
             x, y = building.top_left_x + dr, building.top_left_y + dc
             cell = self.get_cell(x, y)
             cell.remove_type(CELL_TYPES.BUILDING)
             cell.add_type(CELL_TYPES.RESTAURANT)
+        building.name = "Food Warehouse"
+
+        pickup_r, pickup_c = random.choice(building.sidewalk_cells)
+        self.add_cell_type(pickup_r, pickup_c, CELL_TYPES.RESTAURANT_PICKUP)
+        building.pickup_point = (pickup_r, pickup_c)
 
     def add_obstacles_randomly(self) -> None:
         """

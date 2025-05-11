@@ -40,20 +40,21 @@ class GuiWrapper(tk.Tk):
         self.user_dash.render()
 
         # --- Main split content area ---
-        self.content_paned = tk.PanedWindow(self, orient=tk.HORIZONTAL)
+        self.content_paned = tk.PanedWindow(self,orient = tk.HORIZONTAL, sashrelief = tk.RAISED,  showhandle = True)
         self.content_paned.pack(fill=tk.BOTH, expand=True)
 
-
         # Right pane: info canvas
-        self.restaurant_dash_frame = tk.Canvas(self.content_paned, bg="white", width=200)
-        self.content_paned.add(self.restaurant_dash_frame)
+        self.restaurant_dash_frame = tk.Canvas(self.content_paned, bg="white", width=240)
+        self.content_paned.add(self.restaurant_dash_frame, minsize=180)
+
         self.restaurant_dash = RestaurantDashboardRenderer(self.restaurant_dash_frame)
 
         self.campus_render_data = CampusRendererDataStorage()
 
     def add_objects_to_render(self, 
                                 campus_map: Map,
-                                robots: list, 
+                                robots: list,
+                                order_scheduler,
                                 progress_window: ProgressWindow = None):
         """
         Add objects to the campus map renderer.
@@ -61,8 +62,10 @@ class GuiWrapper(tk.Tk):
         self.campus_map : Map = campus_map
         self.robots : list[Robot] = robots
         self.progress_window : ProgressWindow = progress_window
+        self.order_scheduler = order_scheduler
 
         self.restaurant_dash.add_robots(robots)
+        self.restaurant_dash.add_scheduler(order_scheduler)
 
 
     def setup_dynamic_events(self):

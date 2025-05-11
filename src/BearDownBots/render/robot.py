@@ -8,7 +8,7 @@ from BearDownBots.static.cell import CELL_TYPES
 
 class RobotRenderer:
 
-    def __init__(self, 
+    def __init__(self,
                 canvas: tk.Canvas,
                 campus_renderer_data):
         """Initialize the RobotRenderer."""
@@ -36,10 +36,14 @@ class RobotRenderer:
             screen_x = robot.position.y * z - ox
             screen_y = robot.position.x * z - oy
 
+            if getattr(robot, "_needs_blink", False):
+                robot._needs_blink = False
+                robot._blink_led_safe("#ff0")
+
             self.canvas.create_oval(
                 screen_x - radius, screen_y - radius,
                 screen_x + radius, screen_y + radius,
-                fill=CELL_TYPES.ROBOT.color,
+                fill=robot.colour,
                 outline='',
                 tags=("robot",)
             )

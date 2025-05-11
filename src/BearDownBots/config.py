@@ -12,8 +12,8 @@ class Config:
         
     class Environment:
         # environment
-        MAP_ROWS  = 2000 ## number of rows in the map
-        MAP_COLS  = 2000 ## number of columns in the map
+        MAP_ROWS  = 500 ## number of rows in the map
+        MAP_COLS  = 500 ## number of columns in the map
         MAX_BUILDING_ATTEMPTS = 100 ## the higher the number, the denser the campus is
         MIN_BUILDING_CELLS = 75 ## minimum number of cells a building can occupy
         MAX_BUILDING_CELLS = 200 ## maximum number of cells a building can occupy
@@ -24,8 +24,9 @@ class Config:
         NUM_ROBOTS = 3
         TIME_SCALE = 5 ## time scale for the simulation (1 = real time, 2 = twice as fast, etc.)
         UPDATES_PER_SEC = 24 ## number of updates per second
-        NEW_ORDER_INTERVAL_SECONDS = 100 ## time interval in seconds between new orders
+        NEW_ORDER_INTERVAL_SECONDS = 300 ## time interval in seconds between new orders
         NEW_ORDER_INTERVAL = NEW_ORDER_INTERVAL_SECONDS / TIME_SCALE ## time interval in seconds between new orders
+        MAX_ORDERS_PER_ROBOT = 3 ## robot order capacity
     
 
     def get_asset_dir():

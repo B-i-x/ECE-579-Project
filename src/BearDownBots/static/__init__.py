@@ -54,7 +54,7 @@ def create_campus_environment(progress_window: ProgressWindow | None) -> Map:
         building_special_cell = bld.get_random_sidewalk_cell()
         
         if bld.name == "Food Warehouse":
-            campus_map.add_cell_type(building_special_cell[0], building_special_cell[1], CELL_TYPES.RESTUARANT_PICKUP)
+            campus_map.add_cell_type(building_special_cell[0], building_special_cell[1], CELL_TYPES.RESTAURANT_PICKUP)
         else:
             campus_map.add_cell_type(building_special_cell[0], building_special_cell[1], CELL_TYPES.BUILDING_DROP_OFF)
 

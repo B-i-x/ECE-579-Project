@@ -50,11 +50,11 @@ class Building:
         """
         Place an order in the building. This is a placeholder for actual order placement logic.
         """
-        self.order = Order(self)  # Placeholder for order generation logic
-        # Placeholder for order placement logic
-        # print(f"Order placed in {self.name}: {self.order}")
+        if self.dropoff_point is None:
+            # Pick a random sidewalk cell that touches the building
+            self.get_random_sidewalk_cell()
 
-        return self.order
+        return Order(self)
     
     @classmethod
     def generate(cls, min_cells: int, max_cells: int) -> 'Building':

@@ -1,16 +1,26 @@
 import random
 import heapq
 import itertools
+from itertools import cycle
 
 from BearDownBots.static.map import Map
 from BearDownBots.static.cell import CELL_TYPES, Position, Cell
 from BearDownBots.dynamic.randOrders import Order
+from BearDownBots.config import Config
 
 class Direction:
     UP = "up"
     DOWN = "down"
     LEFT = "left"
     RIGHT = "right"
+
+
+ROBOT_COLOURS = cycle([
+    "#e6194b",  # red
+    "#3cb44b",  # green
+    "#4363d8",  # blue
+])
+
 
 class Robot:
     def __init__(self, robot_id: int, map: Map):
@@ -22,6 +32,10 @@ class Robot:
         self.restaurant_pickup_point : Position = None 
         self.dropoff_point : Position = None
         self.next_direction_to_move = None  # Direction to move next
+        self.capacity = Config.Simulation.MAX_ORDERS_PER_ROBOT
+        self.colour = next(ROBOT_COLOURS)
+        self.canvas = None  # set later by RobotRenderer
+        self.led_id = None
 
         self.a_star_path = []  # List of cells to traverse
 
@@ -33,7 +47,7 @@ class Robot:
 
     def place_self_on_restaurant(self):
         for cell in self.map.one_dimensional_grid:
-            if cell.has_type(CELL_TYPES.RESTUARANT_PICKUP):
+            if cell.has_type(CELL_TYPES.RESTAURANT_PICKUP):
                 # copy the cell’s coords instead of sharing the same object
                 px, py = cell.position.x, cell.position.y
                 self.position = Position(px, py)
@@ -134,7 +148,7 @@ class Robot:
                 if cell.has_type(CELL_TYPES.OBSTACLE):
                     continue
                 # 2) only walk on sidewalks
-                if not cell.has_type(CELL_TYPES.WALKWAY):
+                if not cell.has_type(CELL_TYPES.WALKWAY) and nbr != goal:
                     continue
 
                 tentative_g = g_score[current] + 1
@@ -181,23 +195,51 @@ class Robot:
 
     def add_order(self, order):
         """
-        Add an order to the robot's task list.
+        Add an order to the robot's task list **iff** we still have room.
+        Returns True on success, False if already full.
         """
-        # Placeholder for adding an order to the robot's task list
-        self.orders.append(order)
+        if len(self.orders) >= self.capacity:
+            return False
 
+        self.orders.append(order)
+        if self.canvas and self.led_id:
+            self._blink_led_safe("#ff0")
+        else:
+            # remember to blink next time we’re rendered
+            self._needs_blink = True
+
+        # If we’re parked at the warehouse, kick off the new route
         if self.state == "idle":
             self._start_next_delivery()
+
+        return True
+
+    def _blink_led_safe(self, colour, duration=200):
+        # run on the Tk thread
+        if not (self.canvas and self.led_id):
+            return  # nothing to do yet
+
+        def _blink():
+            # ① turn LED on
+            self.canvas.itemconfig(self.led_id, fill=colour)
+            # ② turn it off again after `duration` ms
+            self.canvas.after(
+                duration,
+                lambda c=self.canvas, i=self.led_id: c.itemconfig(i, fill="grey")
+            )
+
+        # ✨ THIS is the critical change — queue work on Tk’s event loop
+        self.canvas.after_idle(_blink)
 
     def _start_next_delivery(self):
         # pop the next order off the queue (but keep it for removal on arrival)
         next_order = self.orders[0]
         raw_dropoff = next_order.building.dropoff_point
 
-        self.dropoff_point = Position(*raw_dropoff) if isinstance(raw_dropoff, tuple) else raw_dropoff
+        self.dropoff_point = (Position(*raw_dropoff) if isinstance(raw_dropoff, tuple) else raw_dropoff)
         
         self.state         = "delivering"
-        self.a_star(self.restaurant_pickup_point, self.dropoff_point)       # plan path to dropoff_point
+        self.a_star(self.position, self.dropoff_point)       # plan path to dropoff_point
 
 
     def act(self):
@@ -220,7 +262,7 @@ class Robot:
                 else:
                     # no more orders → return home
                     self.state = "returning"
-                    self.a_star(self.dropoff_point, self.restaurant_pickup_point)  # plan path back to restaurant
+                    self.a_star(self.position, self.restaurant_pickup_point)  # plan path back to restaurant
                     self.dropoff_point = self.restaurant_pickup_point
 
 
@@ -232,4 +274,5 @@ class Robot:
     
 
     def __str__(self):
-        return f"Robot {self.id} at {self.position}"
+        # shows how many tickets are still on board
+        return f"Robot {self.id} @ {self.position} | {len(self.orders)} order(s)"

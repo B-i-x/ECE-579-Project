@@ -2,7 +2,13 @@
 
 from BearDownBots.app import BearDownBotsApp
 from BearDownBots.config import Config
+
+from BearDownBots.logger import setup_logging
+
 def main():
+
+    setup_logging()
+    
     app = BearDownBotsApp()
 
 def fast():

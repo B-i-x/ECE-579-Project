@@ -1,7 +1,8 @@
 # src/BearDownBots/config.py
 
 class Config:
-    
+    HEADLESS_FLAG = True ## if True, the GUI will not be displayed
+
     class GUI:
         # general
         WINDOW_WIDTH_PIXELS  = 800 ## width of the window in pixels

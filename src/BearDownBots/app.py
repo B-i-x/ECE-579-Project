@@ -119,16 +119,22 @@ class BearDownBotsApp():
           help    — list commands
           exit    — quit
         """
+        command_explanation = """
+            start\tstart continuous simulation
+            stop \tpause it")
+            step \tadvance one simulation step
+            status\tprint time, orders, robot positions
+            exit \tquit the program
+        """
+
         print("=== BearDownBots CLI (headless mode) ===")
+        print(command_explanation)
         print("Type 'help' for commands.")
         while True:
             cmd = input("> ").strip().lower()
             if cmd == "help":
-                print("  start\tstart continuous simulation")
-                print("  stop \tpause it")
-                print("  step \tadvance one simulation step")
-                print("  status\tprint time, orders, robot positions")
-                print("  exit \tquit the program")
+                print(command_explanation)
+
             elif cmd == "start":
                 if not self.running:
                     self.running = True

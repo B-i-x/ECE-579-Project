@@ -194,7 +194,7 @@ class Robot:
         next_order = self.orders[0]
         raw_dropoff = next_order.building.dropoff_point
 
-        self.dropoff_point = Position(*raw_dropoff) if isinstance(raw_dropoff, tuple) else raw_start
+        self.dropoff_point = Position(*raw_dropoff) if isinstance(raw_dropoff, tuple) else raw_dropoff
         
         self.state         = "delivering"
         self.a_star(self.restaurant_pickup_point, self.dropoff_point)       # plan path to dropoff_point

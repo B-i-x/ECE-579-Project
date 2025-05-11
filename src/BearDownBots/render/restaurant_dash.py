@@ -1,38 +1,48 @@
 import tkinter as tk
-import tkinter.ttk as ttk
+from tkinter import ttk
 from PIL import Image
 
-from BearDownBots.dynamic.robot import Robot
 from BearDownBots.config import Config
-from BearDownBots.render.campus import CampusRenderer
+from BearDownBots.dynamic.robot import Robot
+from BearDownBots.dynamic.randOrders import OrderStatus
 
 
 class RestaurantDashboardRenderer:
+    """
+    Left-pane dashboard with:
+        • robot list
+        • four notebook tabs (Placed / Preparing / Ready / Out for Delivery)
+    """
+
+    # ------------------------------------------------------------
+    # construction
+    # ------------------------------------------------------------
     def __init__(self, parent):
-        self.parent = parent
-        self.robots = None
+        self.parent   = parent
+        self.robots   = []       # set later with add_robots()
+        self.scheduler = None
+
         self.robot_label = []
-        self.order_queue = []  # no longer used for display, but you can keep if needed
 
-        self.total_order_count = 0
-
-        self._last_orders_signature: tuple = ()
-
+    # ------------------------------------------------------------
+    # one-off wiring helpers
+    # ------------------------------------------------------------
     def add_robots(self, robots):
-        """
-        Add robots to the restaurant dashboard.
-        """
-        self.robots : list[Robot] = robots
+        self.robots = robots
+
+    def add_scheduler(self, scheduler):
+        self.scheduler = scheduler
 
     def add_campus_renderer_data(self, campus_renderer_obj, renderer_data):
-        """
-        Add the campus renderer to the restaurant dashboard.
-        """
+        """Allows robot-click to recentre the map."""
         self.campus_renderer_obj = campus_renderer_obj
-        self.renderer_data = renderer_data
+        self.renderer_data       = renderer_data
 
+    # ------------------------------------------------------------
+    # UI building
+    # ------------------------------------------------------------
     def render(self):
-        # --- top: robot labels ---
+        # ---------- robot list ----------
         self.robot_frame = tk.Frame(self.parent, bg="lightgrey")
         self.robot_frame.pack(fill='x', padx=10, pady=(10, 5))
 
@@ -46,215 +56,169 @@ class RestaurantDashboardRenderer:
             lbl.pack(anchor='w', pady=2)
             self.robot_label.append(lbl)
 
-        # --- separator & orders below ---
-        separator = ttk.Separator(self.parent, orient='horizontal')
-        separator.pack(fill='x', padx=10, pady=5)
+        # ---------- separator ----------
+        ttk.Separator(
+            self.parent, orient='horizontal'
+        ).pack(fill='x', padx=10, pady=5)
 
-        self.order_frame = tk.Frame(self.parent, bg="lightgrey")
-        self.order_frame.pack(fill='both', expand=True, padx=10, pady=(5, 10))
+        # ---------- four-tab notebook ----------
+        nb_frame = tk.Frame(self.parent, bg="lightgrey")
+        nb_frame.pack(fill='both', expand=True, padx=10, pady=(5, 10))
 
-        # Order count
-        self.order_count_label = tk.Label(
-            self.order_frame,
-            text="Orders Placed: 0",
-            bg="lightgrey",
-            font=("Arial", 14)
-        )
+        self.notebook = ttk.Notebook(nb_frame)
+        self.notebook.pack(fill='both', expand=True)
 
-        self.order_count_label.pack(anchor='w', padx=5, pady=(0,5))
+        def _make_tab(title: str):
+            outer  = tk.Frame(self.notebook, bg="lightgrey")
+            self.notebook.add(outer, text=title)
 
-        # === scrollable orders list ===
-        scroll_frame = tk.Frame(self.order_frame)
-        scroll_frame.pack(fill='both', expand=True, padx=5, pady=5)
+            canvas = tk.Canvas(outer, bg="white", bd=0, highlightthickness=0)
+            vbar   = ttk.Scrollbar(outer, orient='vertical', command=canvas.yview)
+            canvas.configure(yscrollcommand=vbar.set)
 
-        # Canvas
-        self.orders_canvas = tk.Canvas(
-            scroll_frame,
-            bg="white",
-            bd=0,
-            highlightthickness=0
-        )
-        # Scrollbars
-        self.v_scroll = ttk.Scrollbar(
-            scroll_frame,
-            orient='vertical',
-            command=self.orders_canvas.yview
-        )
-        self.h_scroll = ttk.Scrollbar(
-            scroll_frame,
-            orient='horizontal',
-            command=self.orders_canvas.xview
-        )
-        # Configure canvas to scroll with them
-        self.orders_canvas.configure(
-            yscrollcommand=self.v_scroll.set,
-            xscrollcommand=self.h_scroll.set
-        )
+            canvas.pack(side='left', fill='both', expand=True)
+            vbar.pack  (side='right', fill='y')
 
-        # Layout using grid so both scrollbars and canvas align
-        self.orders_canvas.grid(row=0, column=0, sticky='nsew')
-        self.v_scroll.grid(row=0, column=1, sticky='ns')
-        self.h_scroll.grid(row=1, column=0, sticky='ew')
-        scroll_frame.grid_rowconfigure(0, weight=1)
-        scroll_frame.grid_columnconfigure(0, weight=1)
-
-        # Inner frame where you’ll pack the order labels
-        self.orders_list_frame = tk.Frame(self.orders_canvas, bg="white")
-        self.orders_canvas.create_window((0, 0),
-                                         window=self.orders_list_frame,
-                                         anchor='nw')
-
-        # Whenever inner frame grows, update scrollable region
-        self.orders_list_frame.bind(
-            "<Configure>",
-            lambda e: self.orders_canvas.configure(
-                scrollregion=self.orders_canvas.bbox("all")
+            inner = tk.Frame(canvas, bg="white")
+            canvas.create_window((0, 0), window=inner, anchor='nw')
+            inner.bind(
+                "<Configure>",
+                lambda e, c=canvas: c.configure(scrollregion=c.bbox("all"))
             )
-        )
+            return inner
 
-    def _compute_signature(self) -> tuple:
-        # e.g. each robot by its id and the tuple of its order-objects
-        return tuple(
-            (robot.id, tuple(id(o) for o in robot.orders))
-            for robot in self.robots
-        )
-    
+        self.tab_new        = _make_tab("Placed")
+        self.tab_prep       = _make_tab("Preparing")
+        self.tab_ready      = _make_tab("Ready")
+        self.tab_delivering = _make_tab("Out for Delivery")
+
+        # keep wrap-length tidy as each tab resizes
+        for inner in (
+            self.tab_new, self.tab_prep, self.tab_ready, self.tab_delivering
+        ):
+            inner.bind("<Configure>", self._on_inner_resize, add="+")
+
+        # click-to-centre handlers for robot labels
+        self.setup_robot_click_event()
+
+    # ------------------------------------------------------------
+    # periodic updates
+    # ------------------------------------------------------------
+    def update_robot_labels(self):
+        for idx, robot in enumerate(self.robots):
+            lbl = self.robot_label[idx]
+            lbl.config(text=str(robot))
+
     def update_order_labels(self):
-        # build a cheap signature of current orders
-        sig = self._compute_signature()
-        if sig == self._last_orders_signature:
-            # no change in who has what orders → skip the whole repaint
+        if self.scheduler is None:
             return
-        # otherwise, remember this signature and do the full redraw:
-        self._last_orders_signature = sig
 
-        # 1) update the total count
-        total = sum(len(r.orders) for r in self.robots)
-        self.order_count_label.config(text=f"Orders Placed: {total}")
+        # clear every tab
+        for tab in (
+            self.tab_new, self.tab_prep, self.tab_ready, self.tab_delivering
+        ):
+            for widget in tab.winfo_children():
+                widget.destroy()
 
-        # 2) clear out old list
-        for widget in self.orders_list_frame.winfo_children():
-            widget.destroy()
+        # --- tickets not yet on robots ---------------------------
+        bucket = {
+            OrderStatus.PLACED:    self.tab_new,
+            OrderStatus.PREPARING: self.tab_prep,
+            OrderStatus.READY:     self.tab_ready,
+        }
 
-        # 3) repopulate…
+        for building, order in self.scheduler.orders:
+            # skip OUT_FOR_DELIVERY here – they’re handled in the next loop
+            if order.status not in bucket:
+                continue
+
+            parent = bucket[order.status]
+            self._add_label(parent, f"{building.name} → {order}")
+
+        # --- tickets already loaded ------------------------------
         for robot in self.robots:
             if not robot.orders:
                 continue
+
             hdr = tk.Label(
-                self.orders_list_frame,
-                text=f"{robot} ({len(robot.orders)}):",
+                self.tab_delivering,
+                text=f"{robot} ({len(robot.orders)})",
                 bg="lightgrey",
-                font=("Arial", 12, "bold")
+                font=("Arial", 11, "bold")
             )
-            hdr.pack(anchor='w', padx=5, pady=(5,0))
+            hdr.pack(anchor='w', padx=4, pady=(4, 1))
 
-            for order in robot.orders:
-                dropoff = order.building.dropoff_point
-                lbl = tk.Label(
-                    self.orders_list_frame,
-                    text=f"Drop-off at {order.building.name}({dropoff}) → {order}",
-                    bg="white",
-                    font=("Arial", 11)
+            for ord in robot.orders:
+                self._add_label(
+                    self.tab_delivering,
+                    f"→ {ord.building.name} : {ord}"
                 )
-                lbl.pack(anchor='w', padx=15, pady=1)
 
+    def update(self):
+        self.update_robot_labels()
+        self.update_order_labels()
+
+    # ------------------------------------------------------------
+    # helpers
+    # ------------------------------------------------------------
+    def _add_label(self, parent, text):
+        tk.Label(
+            parent,
+            text=text,
+            bg="white",
+            font=("Arial", 10),
+            anchor="w",
+            justify="left",
+            wraplength=220
+        ).pack(fill='x', padx=12, pady=1)
+
+    def _on_inner_resize(self, event):
+        """Auto-adjust wrap-length when a tab’s frame is resized."""
+        wrap = max(event.width - 30, 50)
+        for child in event.widget.winfo_children():
+            if isinstance(child, tk.Label):
+                child.configure(wraplength=wrap, justify="left")
+
+    # ------------------------------------------------------------
+    # click-to-centre logic (unchanged from your version)
+    # ------------------------------------------------------------
     def setup_robot_click_event(self):
-        """
-        Bind the robot label to a click event that centers the campus view on the robot's position.
-        """
-        # print(f"Robot labels are {self.robot_label}")
-        # Bind the click event to the robot label
-        for robot_index, lbl in enumerate(self.robot_label):
-            handler = self._make_robot_click_handler(self.robots[robot_index])
-            lbl.bind("<Button-1>", handler)
+        for idx, lbl in enumerate(self.robot_label):
+            lbl.bind("<Button-1>", self._make_robot_click_handler(self.robots[idx]))
 
     def _make_robot_click_handler(self, robot):
         def handler(event):
             self._on_robot_clicked(robot)
         return handler
 
-    def update_robot_labels(self):
-        """
-        Update the robot labels with their current positions.
-        """
-
-        for robot in self.robots:
-            # --- new label-update logic ---
-            try:
-                idx = self.robots.index(robot)
-                selected_lbl = self.robot_label[idx]
-
-                # 1) Refresh its text in case robot.__str__ shows updated info
-                selected_lbl.config(text=str(robot))
-
-                # 2) Highlight the selected label and reset others
-                for lbl in self.robot_label:
-                    lbl.config(bg="lightgrey")
-                selected_lbl.config(bg="lightblue")
-
-            except ValueError:
-                # robot wasn’t found in the list—ignore
-                pass
-
-            
     def _on_robot_clicked(self, robot: Robot):
-        """
-        Center the campus view on robot.position at ROBOT_ZOOM_FACTOR scale,
-        then re-render the campus map, clamping each axis only when needed.
-        """
         cam   = self.campus_renderer_obj
         data  = self.renderer_data
         base  = cam._base_image
-        # --- pull live widget size and update renderer ---
-        cw = cam.canvas.winfo_width()
-        ch = cam.canvas.winfo_height()
+
+        cw, ch       = cam.canvas.winfo_width(), cam.canvas.winfo_height()
         cam.canvas_w = cw
         cam.canvas_h = ch
 
         target_zoom = Config.GUI.ROBOT_ZOOM_FACTOR
-
-        # 1) Apply zoom change first, if needed
         if data.zoom != target_zoom:
             data.zoom = target_zoom
             new_w = int(base.width  * data.zoom)
             new_h = int(base.height * data.zoom)
             cam._scaled_image = base.resize((new_w, new_h), Image.NEAREST)
 
-        # 2) Map robot cell → pixel in the scaled image
-        cell_x   = robot.position.y   # or .col
-        cell_y   = robot.position.x   # or .row
+        cell_x, cell_y = robot.position.y, robot.position.x
         robot_px = cell_x * data.zoom
         robot_py = cell_y * data.zoom
 
-        # 3) Compute raw offsets to center the robot
         raw_off_x = robot_px - cw / 2
         raw_off_y = robot_py - ch / 2
 
-        # 4) Get the maximum allowable offsets
         scaled_w, scaled_h = cam._scaled_image.size
         max_off_x = scaled_w - cw
         max_off_y = scaled_h - ch
 
-        # 5) Clamp each axis only if there's “room to pan”
-        if max_off_x > 0:
-            data.offset_x = max(0, min(raw_off_x, max_off_x))
-        else:
-            data.offset_x = 0
+        data.offset_x = max(0, min(raw_off_x, max_off_x)) if max_off_x > 0 else 0
+        data.offset_y = max(0, min(raw_off_y, max_off_y)) if max_off_y > 0 else 0
 
-        if max_off_y > 0:
-            data.offset_y = max(0, min(raw_off_y, max_off_y))
-        else:
-            data.offset_y = 0
-
-        # 7) Finally redraw
         cam.render()
-
-    def update(self):
-        """
-        Update the restaurant dashboard.
-        """
-        self.update_robot_labels()
-        self.update_order_labels()
-
-
-

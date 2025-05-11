@@ -46,8 +46,8 @@ class GuiWrapper(tk.Tk):
 
 
         # Right pane: info canvas
-        self.restaurant_dash_frame = tk.Canvas(self.content_paned, bg="white", width=200)
-        self.content_paned.add(self.restaurant_dash_frame)
+        self.restaurant_dash_frame = tk.Frame(self.content_paned, bg="white")
+        self.content_paned.add(self.restaurant_dash_frame,minsize=150,stretch="always")
         self.restaurant_dash = RestaurantDashboardRenderer(self.restaurant_dash_frame)
 
         self.campus_render_data = CampusRendererDataStorage()

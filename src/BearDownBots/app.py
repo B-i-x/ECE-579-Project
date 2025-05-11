@@ -48,6 +48,10 @@ class BearDownBotsApp():
 
         self.renderer.user_dash.start_button.configure(command=self.start_simulation)
         self.renderer.user_dash.stop_button.configure(command=self.pause_simulation)
+        self.renderer.user_dash.start_clock(
+            time_func=lambda: self.sim_clock.now(),
+            interval_ms=int(1000 / self.base_fps)
+        )
 
         self.renderer.setup_dynamic_events()
 

@@ -78,7 +78,7 @@ class BearDownBotsApp():
 
         new_orders = self.order_scheduler.place_new_order()
 
-# Add to listbox if any new orders were placed
+        # Add to listbox if any new orders were placed
         if new_orders:
             for building, order in new_orders:
                 order_id = getattr(order, "id", str(order))  # fallback if no .id exists

@@ -84,7 +84,12 @@ class GuiWrapper(tk.Tk):
         self.restaurant_dash.add_campus_renderer_data(self.campus_renderer, self.campus_render_data)
         self.restaurant_dash.render()
         self.restaurant_dash.setup_robot_click_event()
-        
+        for lbl in self.restaurant_dash.robot_label:
+            lbl.bind(
+                "<Button-1>",
+                lambda e, rr=self.robot_renderer, rs=self.robots: rr.render_robots(rs),
+                add='+'
+            )
         
         self.progress_window.destroy()  
 

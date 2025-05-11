@@ -31,6 +31,9 @@ class Robot:
 
         self.place_self_on_restaurant()
 
+        self.pathfinding_method = "greedy"  # Options: "a_star", "greedy", "dfs"
+
+
     def place_self_on_restaurant(self):
         for cell in self.map.one_dimensional_grid:
             if cell.has_type(CELL_TYPES.RESTUARANT_PICKUP):
@@ -145,6 +148,92 @@ class Robot:
         self.next_direction_to_move = None
         return []
 
+
+    def greedy_best_first_search(self, raw_start, raw_goal) -> list[Position]:
+        if raw_start is None or raw_goal is None:
+            return []
+
+        start = Position(*raw_start) if isinstance(raw_start, tuple) else raw_start
+        goal  = Position(*raw_goal)  if isinstance(raw_goal, tuple) else raw_goal
+
+        def h(p: Position, q: Position) -> int:
+            return abs(p.x - q.x) + abs(p.y - q.y)
+
+        counter = itertools.count()
+        open_heap = [(h(start, goal), next(counter), start)]
+        came_from = {}
+        visited = set()
+
+        while open_heap:
+            _, _, current = heapq.heappop(open_heap)
+
+            if current == goal:
+                path_pos = []
+                while current != start:
+                    path_pos.append(current)
+                    current = came_from[current]
+                path_pos.append(start)
+                path_pos.reverse()
+                return path_pos
+
+            visited.add(current)
+
+            for dx, dy in [(-1,0), (1,0), (0,-1), (0,1)]:
+                nbr = Position(current.x + dx, current.y + dy)
+
+                if (0 <= nbr.x < self.map.rows and 0 <= nbr.y < self.map.cols and
+                    nbr not in visited and
+                    self.map.get_cell(nbr.x, nbr.y).has_type(CELL_TYPES.WALKWAY)):
+                    if nbr not in came_from:
+                        came_from[nbr] = current
+                        heapq.heappush(open_heap, (h(nbr, goal), next(counter), nbr))
+
+        return []
+
+
+    def depth_first_search(self, raw_start, raw_goal) -> list[Position]:
+        if raw_start is None or raw_goal is None:
+            return []
+
+        start = Position(*raw_start) if isinstance(raw_start, tuple) else raw_start
+        goal  = Position(*raw_goal)  if isinstance(raw_goal, tuple) else raw_goal
+
+        stack = [(start, [start])]
+        visited = set()
+
+        while stack:
+            current, path = stack.pop()
+
+            if current == goal:
+                return path
+
+            visited.add(current)
+
+            for dx, dy in [(-1,0), (1,0), (0,-1), (0,1)]:
+                nbr = Position(current.x + dx, current.y + dy)
+
+                if (0 <= nbr.x < self.map.rows and 0 <= nbr.y < self.map.cols and
+                    nbr not in visited and
+                    self.map.get_cell(nbr.x, nbr.y).has_type(CELL_TYPES.WALKWAY)):
+                    stack.append((nbr, path + [nbr]))
+
+        return []
+
+
+    def plan_path(self, start, goal) -> list[Position]:
+        if self.pathfinding_method == "a_star":
+            path_cells = self.a_star(start, goal)
+            return [cell.position for cell in path_cells] if path_cells else []
+        elif self.pathfinding_method == "greedy":
+            return self.greedy_best_first_search(start, goal)
+        elif self.pathfinding_method == "dfs":
+            return self.depth_first_search(start, goal)
+        else:
+            print(f"Unknown pathfinding method '{self.pathfinding_method}', defaulting to A*.")
+            path_cells = self.a_star(start, goal)
+            return [cell.position for cell in path_cells] if path_cells else []
+
+
         
     def move(self):
         """
@@ -174,6 +263,7 @@ class Robot:
         # 3) actually step
         self.previous_position = old_pos
         self.position          = next_pos
+
 
     def add_order(self, order):
         """
@@ -216,7 +306,8 @@ class Robot:
                 else:
                     # no more orders → return home
                     self.state = "returning"
-                    self.a_star(self.dropoff_point, self.restaurant_pickup_point)  # plan path back to restaurant
+                    self.a_star_path = self.plan_path(self.dropoff_point, self.restaurant_pickup_point)
+
                     self.dropoff_point = self.restaurant_pickup_point
 
 
@@ -228,4 +319,4 @@ class Robot:
     
 
     def __str__(self):
-        return f"Robot {self.id} at {self.position}"
+        return f"Robot {self.id} at {self.position} (method: {self.pathfinding_method})"

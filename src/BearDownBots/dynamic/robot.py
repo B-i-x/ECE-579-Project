@@ -34,14 +34,20 @@ class Robot:
 
         self.path = []  # List of cells to traverse
 
-        self.orders : list[Order] = []  # List of orders assigned to the robot
+        self._pending_orders : list[Order] = []    # <-- internal queue
+        self.current_batch: list[Order] = []
+
+
 
         self.state = "idle"   # one of: "delivering", "returning", "idle"
 
         self.place_self_on_restaurant()
 
-        self.pathfinding_method = "greedy"  # Options: "a_star", "greedy", "dfs"
+        self.pathfinding_method = "a_star"  # Options: "a_star", "greedy", "dfs"
 
+    @property
+    def orders(self) -> list[Order]:
+        return self.current_batch if self.current_batch else self._pending_orders
 
     def place_self_on_restaurant(self):
         for cell in self.map.one_dimensional_grid:
@@ -54,7 +60,41 @@ class Robot:
                 cell.add_type(CELL_TYPES.ROBOT)
                 # print(f"Placed robot {self.id} at {self.position}")
                 return
-            
+
+    def _select_orders_batch(self, batch_size: int = 3) -> list[Order]:
+        """
+        Always pick the oldest order, then up to (batch_size-1) more
+        by nearest-neighbor on dropoff_point.
+        """
+        if not self._pending_orders:
+            return []
+
+        # 1) oldest first
+        batch = [self._pending_orders[0]]
+        remaining = self._pending_orders[1:]
+
+        # 2) greedy nearest-neighbor on dropoff_point
+        def manhattan(o: Order, ref_xy: tuple[int,int]):
+            x0,y0 = ref_xy
+            x1,y1 = o.building.dropoff_point
+            return abs(x0-x1) + abs(y0-y1)
+
+        # pick second closest to first
+        if remaining and len(batch) < batch_size:
+            ref1 = batch[0].building.dropoff_point
+            second = min(remaining, key=lambda o: manhattan(o, ref1))
+            batch.append(second)
+            remaining = [o for o in remaining if o is not second]
+
+        # pick third closest to **second**
+        if remaining and len(batch) < batch_size:
+            ref2 = batch[1].building.dropoff_point
+            third = min(remaining, key=lambda o: manhattan(o, ref2))
+            batch.append(third)
+
+        return batch
+
+
     def a_star(self, raw_start, raw_goal) -> list[Cell]:
         """
         Find a path along WALKWAY cells from restaurant_pickup_point to dropoff_point.
@@ -282,57 +322,104 @@ class Robot:
         """
         Add an order to the robot's task list.
         """
-        if len(self.orders) >= self.MAX_CARRY:
+        if len(self._pending_orders) >= self.MAX_CARRY:
             return False
 
-        self.orders.append(order)
+        self._pending_orders.append(order)
 
         if self.state == "idle":
             self._start_next_delivery()
 
         return True
 
-    def _start_next_delivery(self):
+    #def _start_next_delivery(self):
         # pop the next order off the queue (but keep it for removal on arrival)
-        next_order = self.orders[0]
-        raw_dropoff = next_order.building.dropoff_point
+        #next_order = self.orders[0]
+        #raw_dropoff = next_order.building.dropoff_point
 
-        self.dropoff_point = Position(*raw_dropoff) if isinstance(raw_dropoff, tuple) else raw_dropoff
+        #self.dropoff_point = Position(*raw_dropoff) if isinstance(raw_dropoff, tuple) else raw_dropoff
         
+        #self.state = "delivering"
+        #self.a_star(self.position, self.dropoff_point)       # plan path to dropoff_point
+
+    def _start_next_delivery(self):
+        # select up to three
+        self.current_batch = self._select_orders_batch()
+
+        # remove them from the main queue so act() won’t see them twice
+        for o in self.current_batch:
+            self._pending_orders.remove(o)
+
+        # now begin with the first in the batch
+        first = self.current_batch[0]
+        drop = first.building.dropoff_point
+        self.dropoff_point = Position(*drop) if isinstance(drop, tuple) else drop
+
         self.state = "delivering"
-        self.a_star(self.position, self.dropoff_point)       # plan path to dropoff_point
+        self.a_star_path = self.plan_path(self.restaurant_pickup_point, self.dropoff_point)
 
 
-    def act(self):
+
+    #def act(self):
         """
         Perform the robot's action.
         """
 
-        self.move()
+        #self.move()
 
         # 2) did we just arrive?
-        if self.position == self.dropoff_point:
-            if self.state == "delivering":
-                print(f"Robot {self.id} arrived at dropoff point {self.dropoff_point}.")
+        #if self.position == self.dropoff_point:
+            #if self.state == "delivering":
+                #print(f"Robot {self.id} arrived at dropoff point {self.dropoff_point}.")
                 # remove the completed order
-                completed = self.orders.pop(0)
+                #completed = self.orders.pop(0)
 
                 # if there’s another order waiting, go straight to it
-                if self.orders:
-                    self._start_next_delivery()
-                else:
+                #if self.orders:
+                    #self._start_next_delivery()
+                #else:
                     # no more orders → return home
-                    self.state = "returning"
-                    self.path = self.plan_path(self.dropoff_point, self.restaurant_pickup_point)
+                    #self.state = "returning"
+                    #self.path = self.plan_path(self.dropoff_point, self.restaurant_pickup_point)
 
+                    #self.dropoff_point = self.restaurant_pickup_point
+
+
+            #elif self.state == "returning":
+                # we’re home!
+                #self.state = "idle"
+                #print(f"Robot {self.id} returned to restaurant pickup point {self.restaurant_pickup_point}.")
+                # (you could also clear path, etc.)
+
+    def act(self):
+        self.move()
+
+        # did we just arrive?
+        if self.position == self.dropoff_point:
+            if self.state == "delivering":
+                print(f"Robot {self.id} arrived at {self.dropoff_point}.")
+
+                # mark this one done
+                done = self.current_batch.pop(0)
+
+                if self.current_batch:
+                    # more in this batch → go to next
+                    next_drop = self.current_batch[0].building.dropoff_point
+                    self.dropoff_point = Position(*next_drop)
+                    self.a_star_path = self.plan_path(self.position, self.dropoff_point)
+                else:
+                    # batch finished → return home
+                    self.state = "returning"
+                    self.a_star_path = self.plan_path(self.position, self.restaurant_pickup_point)
                     self.dropoff_point = self.restaurant_pickup_point
 
-
             elif self.state == "returning":
-                # we’re home!
                 self.state = "idle"
-                print(f"Robot {self.id} returned to restaurant pickup point {self.restaurant_pickup_point}.")
-                # (you could also clear path, etc.)
+                print(f"Robot {self.id} returned home.")
+                # if more orders queued, start a new batch:
+                if self._pending_orders:
+                    self._start_next_delivery()
+
     
 
     def __str__(self):

@@ -1,6 +1,6 @@
 # BearDownBots/actors/random_order_scheduler.py
 import random
-from BearDownBots.dynamic.randOrders import Order            # or OrderGenerator
+from BearDownBots.dynamic.randOrders import Order, OrderStatus
 from typing import Sequence
 
 from BearDownBots.static.buildings import Building
@@ -19,9 +19,12 @@ class OrderPlacer:
                  ):
         self.buildings : list[Building] = buildings
         self.timer : SimulationClock = timer
-        self.orders : list[Order] = []  # List to store placed orders
+        self.orders : list[tuple[Building, Order]] = []  # List to store placed orders
+        self.MAX_PREP = 10
+        self.PREP_SECONDS = 15
         self._time_acc    = 0.0     # accumulated sim time since last order
         self._last_sim_time = timer.sim_time
+        self._last_kitch_t = timer.sim_time
 
     def place_new_order(self) -> Order | None:
         """
@@ -52,15 +55,13 @@ class OrderPlacer:
 
         building = random.choice(candidates)
 
-        # pick & place
-        building = random.choice(self.buildings)
-
-        
         order = building.place_order()
+        order.status = OrderStatus.PLACED
+        order.prep_remaining = self.PREP_SECONDS
 
         # store and return
         self.orders.append((building, order))
-        return order
+        return [(building, order)]
     
     def load_order_into_robots(self, robots: list[Robot]):
         """
@@ -70,24 +71,76 @@ class OrderPlacer:
         """
         unassigned: list[tuple[Building, Order]] = []
 
-        for building, order in self.orders:
-            # find all robots currently waiting at the restaurant
-            available = [
-                r for r in robots
-                if r.position == r.restaurant_pickup_point
-            ]
+        # 1) First move tickets through the kitchen pipeline
+        self._advance_kitchen()
 
-            if not available:
-                # no one at pickup → leave this order unassigned
+        # 2) Then try to load READY tickets into idle robots
+        for building, order in self.orders:
+            if order.status != OrderStatus.READY:
                 unassigned.append((building, order))
                 continue
 
-            # among those at the pickup, pick the one with fewest orders
-            chosen = min(available, key=lambda r: len(r.orders))
-            chosen.add_order(order)
-            print(f"[OrderPlacer] Loaded {order} into {chosen}")
+            # find bots parked at the pickup point
+            waiting = [
+                r for r in robots
+                if r.position == r.restaurant_pickup_point
+                and len(r.orders) < r.MAX_CARRY
+            ]
+
+            if not waiting:
+                unassigned.append((building, order))
+                continue
+
+            chosen = min(waiting, key=lambda r: len(r.orders))
+            if chosen.add_order(order):
+                order.status = OrderStatus.OUT_FOR_DELIVERY
+                print(f"[Scheduler] Loaded {order} into {chosen}")
+            else:
+                unassigned.append((building, order))
+
+        # for building, order in self.orders:
+        #     # find all robots currently waiting at the restaurant
+        #     available = [
+        #         r for r in robots
+        #         if r.position == r.restaurant_pickup_point
+        #     ]
+        #
+        #     if not available:
+        #         # no one at pickup → leave this order unassigned
+        #         unassigned.append((building, order))
+        #         continue
+        #
+        #     # among those at the pickup, pick the one with fewest orders
+        #     chosen = min(available, key=lambda r: len(r.orders))
+        #     chosen.add_order(order)
+        #     print(f"[OrderPlacer] Loaded {order} into {chosen}")
 
         # keep only the orders that we were unable to load
         self.orders = unassigned
 
-        
+    # ------------------------------------------------------------
+    # helpers
+    # ------------------------------------------------------------
+    def _advance_kitchen(self):
+        """
+        • keep at most MAX_PREP tickets in PREPARING
+        • decrement their timers
+        • when prep_remaining ≤ 0 → status = READY
+        """
+        preparing   = [t for t in self.orders if t[1].status == OrderStatus.PREPARING]
+        placed      = [t for t in self.orders if t[1].status == OrderStatus.PLACED]
+
+        # pull from PLACED → PREPARING until capacity full
+        while len(preparing) < self.MAX_PREP and placed:
+            building, order = placed.pop(0)
+            order.status = OrderStatus.PREPARING
+            preparing.append((building, order))
+
+        # cook!
+        now = self.timer.sim_time
+        dt = now - self._last_kitch_t
+        self._last_kitch_t = now
+        for _, order in preparing:
+            order.prep_remaining -= dt
+            if order.prep_remaining <= 0:
+                order.status = OrderStatus.READY

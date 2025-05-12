@@ -23,11 +23,14 @@ class RobotRenderer:
         # 1) remove old robot ovals
         self.canvas.delete("robot")
 
-        # 2) draw each robot with the "robot" tag
-        radius = 3
         z  = self.data.zoom
         ox = self.data.offset_x
         oy = self.data.offset_y
+
+        # pick a radius that's, say, 30% of one cell, but at least 3px
+        world_radius = 0.5            # fraction of a cell
+        min_px      = 3               # floor so it never vanishes
+        radius      = max(min_px, int(world_radius * z))
 
         for robot in robots:
             screen_x = robot.position.y * z - ox
@@ -36,7 +39,7 @@ class RobotRenderer:
             self.canvas.create_oval(
                 screen_x - radius, screen_y - radius,
                 screen_x + radius, screen_y + radius,
-                fill=CELL_TYPES.ROBOT.color,
+                fill=robot.colour,
                 outline='',
                 tags=("robot",)
             )

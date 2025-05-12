@@ -1,6 +1,7 @@
 import random
 import heapq
 import itertools
+from itertools import cycle
 
 from BearDownBots.static.map import Map
 from BearDownBots.static.cell import CELL_TYPES, Position, Cell
@@ -12,7 +13,14 @@ class Direction:
     LEFT = "left"
     RIGHT = "right"
 
+ROBOT_COLOURS = cycle([
+    "#e6194b",  # red
+    "#3cb44b",  # green
+    "#4363d8",  # blue
+])
+
 class Robot:
+    MAX_CARRY = 3
     def __init__(self, robot_id: int, map: Map):
         self.id = robot_id
         self.map: Map = map
@@ -22,6 +30,7 @@ class Robot:
         self.restaurant_pickup_point : Position = None 
         self.dropoff_point : Position = None
         self.next_direction_to_move = None  # Direction to move next
+        self.colour = next(ROBOT_COLOURS)
 
         self.path = []  # List of cells to traverse
 
@@ -133,6 +142,10 @@ class Robot:
                     continue
 
                 cell = self.map.get_cell(nbr.x, nbr.y)
+                # 1) never walk into obstacles
+                if cell.has_type(CELL_TYPES.OBSTACLE):
+                    continue
+                # 2) only walk on sidewalks
                 if not cell.has_type(CELL_TYPES.WALKWAY):
                     continue
 
@@ -269,21 +282,25 @@ class Robot:
         """
         Add an order to the robot's task list.
         """
-        # Placeholder for adding an order to the robot's task list
+        if len(self.orders) >= self.MAX_CARRY:
+            return False
+
         self.orders.append(order)
 
         if self.state == "idle":
             self._start_next_delivery()
+
+        return True
 
     def _start_next_delivery(self):
         # pop the next order off the queue (but keep it for removal on arrival)
         next_order = self.orders[0]
         raw_dropoff = next_order.building.dropoff_point
 
-        self.dropoff_point = Position(*raw_dropoff) if isinstance(raw_dropoff, tuple) else raw_start
+        self.dropoff_point = Position(*raw_dropoff) if isinstance(raw_dropoff, tuple) else raw_dropoff
         
-        self.state         = "delivering"
-        self.a_star(self.restaurant_pickup_point, self.dropoff_point)       # plan path to dropoff_point
+        self.state = "delivering"
+        self.a_star(self.position, self.dropoff_point)       # plan path to dropoff_point
 
 
     def act(self):

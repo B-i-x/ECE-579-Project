@@ -1,6 +1,7 @@
 import tkinter as tk
 
 from BearDownBots.config import Config
+from BearDownBots.dynamic.rand_order_scheduler import OrderPlacer
 
 from BearDownBots.static.map import Map
 
@@ -45,15 +46,16 @@ class GuiWrapper(tk.Tk):
 
 
         # Right pane: info canvas
-        self.restaurant_dash_frame = tk.Canvas(self.content_paned, bg="white", width=200)
-        self.content_paned.add(self.restaurant_dash_frame)
+        self.restaurant_dash_frame = tk.Frame(self.content_paned, bg="white")
+        self.content_paned.add(self.restaurant_dash_frame,minsize=150,stretch="always")
         self.restaurant_dash = RestaurantDashboardRenderer(self.restaurant_dash_frame)
 
         self.campus_render_data = CampusRendererDataStorage()
 
     def add_objects_to_render(self, 
                                 campus_map: Map,
-                                robots: list, 
+                                robots: list,
+                                scheduler: OrderPlacer,
                                 progress_window: ProgressWindow = None):
         """
         Add objects to the campus map renderer.
@@ -63,6 +65,7 @@ class GuiWrapper(tk.Tk):
         self.progress_window : ProgressWindow = progress_window
 
         self.restaurant_dash.add_robots(robots)
+        self.restaurant_dash.add_scheduler(scheduler)
 
 
     def setup_dynamic_events(self):
@@ -84,7 +87,12 @@ class GuiWrapper(tk.Tk):
         self.restaurant_dash.add_campus_renderer_data(self.campus_renderer, self.campus_render_data)
         self.restaurant_dash.render()
         self.restaurant_dash.setup_robot_click_event()
-        
+        for lbl in self.restaurant_dash.robot_label:
+            lbl.bind(
+                "<Button-1>",
+                lambda e, rr=self.robot_renderer, rs=self.robots: rr.render_robots(rs),
+                add='+'
+            )
         
         self.progress_window.destroy()  
 

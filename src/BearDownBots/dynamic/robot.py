@@ -23,7 +23,7 @@ class Robot:
         self.dropoff_point : Position = None
         self.next_direction_to_move = None  # Direction to move next
 
-        self.a_star_path = []  # List of cells to traverse
+        self.path = []  # List of cells to traverse
 
         self.orders : list[Order] = []  # List of orders assigned to the robot
 
@@ -116,7 +116,7 @@ class Robot:
                 else:
                     self.next_direction_to_move = None
 
-                self.a_star_path = path_pos[1:]   # drop the start—these are the next steps
+                self.path = path_pos[1:]   # drop the start—these are the next steps
 
                 # print(f"Robot {self.id} found a path from {start} to {goal} with {len(path_cells)} cells.")
                 # print(f"Robot {self.id} moving from {start} to {goal} in direction {self.next_direction_to_move}")
@@ -237,16 +237,16 @@ class Robot:
         
     def move(self):
         """
-        Step *along* the precomputed self.a_star_path.
+        Step *along* the precomputed self.path.
         Each call pops the next Position and walks there,
         removing that cell from the front of the path.
         """
         # nothing queued?
-        if not self.a_star_path:
+        if not self.path:
             return
 
         # 1) figure out where to go next
-        next_pos = self.a_star_path.pop(0)  # Position(x,y)
+        next_pos = self.path.pop(0)  # Position(x,y)
         old_pos  = self.position
 
         # 2) compute the direction (optional, for your logic)
@@ -306,7 +306,7 @@ class Robot:
                 else:
                     # no more orders → return home
                     self.state = "returning"
-                    self.a_star_path = self.plan_path(self.dropoff_point, self.restaurant_pickup_point)
+                    self.path = self.plan_path(self.dropoff_point, self.restaurant_pickup_point)
 
                     self.dropoff_point = self.restaurant_pickup_point
 
@@ -315,7 +315,7 @@ class Robot:
                 # we’re home!
                 self.state = "idle"
                 print(f"Robot {self.id} returned to restaurant pickup point {self.restaurant_pickup_point}.")
-                # (you could also clear a_star_path, etc.)
+                # (you could also clear path, etc.)
     
 
     def __str__(self):

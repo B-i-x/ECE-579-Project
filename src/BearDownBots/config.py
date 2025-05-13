@@ -26,8 +26,8 @@ class Config:
         UPDATES_PER_SEC = 24 ## number of updates per second
         NEW_ORDER_INTERVAL_SECONDS = 100 ## time interval in seconds between new orders
         NEW_ORDER_INTERVAL = NEW_ORDER_INTERVAL_SECONDS / TIME_SCALE ## time interval in seconds between new orders
-        PATHFINDING_ALGORITHM = "astar" # or "dfs", "greedy"
-        ORDER_ASSIGNMENT_STRATEGY = "between"  # or "proximity", "between"
+        PATHFINDING_ALGORITHM = "astar" # "astar", "dfs", "greedy"
+        ORDER_ASSIGNMENT_STRATEGY = "oldest"  # "oldest", "proximity", "between"
 
     def get_asset_dir():
         # Get the directory of the assets folder

@@ -28,7 +28,7 @@ Operating from a central food warehouse, each robot loads multiple orders and se
     ```
 
     or if you want to run a smaller campus map for development
-    ``bash
+    ```bash
     run-fast
     ```
 

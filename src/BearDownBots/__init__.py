@@ -8,7 +8,6 @@ from BearDownBots.logger import setup_logging
 def main():
 
     setup_logging()
-    fast()
     app = BearDownBotsApp()
 
 def fast():

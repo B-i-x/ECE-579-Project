@@ -27,6 +27,12 @@ Operating from a central food warehouse, each robot loads multiple orders and se
     run
     ```
 
+    or if you want to run a smaller campus map for development
+    ``bash
+    run-fast
+    ```
+
+
 ## Repository Structure
 - `/src`: Source code
 - `/tests`: Test cases

@@ -65,62 +65,82 @@ class OrderPlacer:
     
     def load_order_into_robots(self, robots: list[Robot]):
         """
-        Load orders into any robot that is both at the restaurant pickup
-        point *and* has the fewest orders.  Any order for which no robot
-        is at the pickup point remains in self.orders (unassigned).
+        Load orders into robots using a configurable strategy:
+        - "oldest": oldest available orders
+        - "proximity": oldest + 2 closest to that destination (among top 10)
+        - "between": 2 oldest + 1 between them
         """
         unassigned: list[tuple[Building, Order]] = []
 
-        # 1) First move tickets through the kitchen pipeline
+        # Advance kitchen status
         self._advance_kitchen()
 
-        # 2) Then try to load READY tickets into idle robots
-        for building, order in self.orders:
-            if order.status != OrderStatus.READY:
-                unassigned.append((building, order))
-                continue
+        # Separate orders by status
+        ready_orders = [(b, o) for (b, o) in self.orders if o.status == OrderStatus.READY]
+        unassigned = [(b, o) for (b, o) in self.orders if o.status != OrderStatus.READY]
 
-            # find bots parked at the pickup point
-            waiting = [
-                r for r in robots
-                if r.position == r.restaurant_pickup_point
-                and len(r.orders) < r.MAX_CARRY
-            ]
+        # Find eligible robots
+        waiting = [
+            r for r in robots
+            if r.position == r.restaurant_pickup_point and len(r.orders) < r.MAX_CARRY
+        ]
 
-            if not waiting:
-                unassigned.append((building, order))
-                continue
+        if not waiting or not ready_orders:
+            self.orders = unassigned + ready_orders
+            return
 
-            chosen = min(waiting, key=lambda r: len(r.orders))
-            if chosen.add_order(order):
-                order.status = OrderStatus.OUT_FOR_DELIVERY
-                print(f"[Scheduler] Loaded {order} into {chosen}")
-            else:
-                unassigned.append((building, order))
+        strategy = Config.Simulation.ORDER_ASSIGNMENT_STRATEGY.lower()
 
-        # for building, order in self.orders:
-        #     # find all robots currently waiting at the restaurant
-        #     available = [
-        #         r for r in robots
-        #         if r.position == r.restaurant_pickup_point
-        #     ]
-        #
-        #     if not available:
-        #         # no one at pickup → leave this order unassigned
-        #         unassigned.append((building, order))
-        #         continue
-        #
-        #     # among those at the pickup, pick the one with fewest orders
-        #     chosen = min(available, key=lambda r: len(r.orders))
-        #     chosen.add_order(order)
-        #     print(f"[OrderPlacer] Loaded {order} into {chosen}")
+        for robot in waiting:
+            if not ready_orders:
+                break
 
-        # keep only the orders that we were unable to load
-        self.orders = unassigned
+            selected_orders = []
 
-    # ------------------------------------------------------------
-    # helpers
-    # ------------------------------------------------------------
+            if strategy == "oldest":
+                selected_orders = ready_orders[-robot.MAX_CARRY:]
+
+            elif strategy == "proximity":
+                primary = ready_orders[-1]
+                rest = ready_orders[-10:-1]  # 9 before it
+
+                def dist(t):
+                    x1, y1 = primary[0].dropoff_point
+                    x2, y2 = t[0].dropoff_point
+                    return abs(x1 - x2) + abs(y1 - y2)
+
+                close = sorted(rest, key=dist)[:robot.MAX_CARRY - 1]
+                selected_orders = [primary] + close
+
+            elif strategy == "between":
+                if len(ready_orders) < 2:
+                    selected_orders = ready_orders[:robot.MAX_CARRY]
+                else:
+                    first = ready_orders[-1]
+                    second = ready_orders[-2]
+                    rest = ready_orders[-10:-2]
+
+                    def between(t):
+                        x = t[0].dropoff_point[0]
+                        y = t[0].dropoff_point[1]
+                        x_range = sorted([first[0].dropoff_point[0], second[0].dropoff_point[0]])
+                        y_range = sorted([first[0].dropoff_point[1], second[0].dropoff_point[1]])
+                        return x_range[0] <= x <= x_range[1] and y_range[0] <= y <= y_range[1]
+
+                    mid = next((t for t in rest if between(t)), None)
+                    selected_orders = [second, first]
+                    if mid:
+                        selected_orders.append(mid)
+
+            # Assign selected orders to this robot
+            for building, order in selected_orders:
+                if robot.add_order(order):
+                    order.status = OrderStatus.OUT_FOR_DELIVERY
+                    print(f"[Scheduler] Loaded {order} into {robot}")
+                    ready_orders.remove((building, order))
+
+        self.orders = unassigned + ready_orders
+
     def _advance_kitchen(self):
         """
         • keep at most MAX_PREP tickets in PREPARING

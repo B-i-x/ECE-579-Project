@@ -139,11 +139,16 @@ class Robot:
                     continue
 
                 cell = self.map.get_cell(nbr.x, nbr.y)
+
                 # 1) never walk into obstacles
                 if cell.has_type(CELL_TYPES.OBSTACLE):
                     continue
                 # 2) only walk on sidewalks
                 if not cell.has_type(CELL_TYPES.WALKWAY):
+                    continue
+                # 3) never walk on other robots
+                if cell.has_type(CELL_TYPES.ROBOT):
+                    # print(f"Robot {self.id} cannot walk on other robots.")
                     continue
 
                 tentative_g = g_score[current] + 1
@@ -187,6 +192,12 @@ class Robot:
         # 3) actually step
         self.previous_position = old_pos
         self.position          = next_pos
+
+        self.map.get_cell(old_pos.x, old_pos.y).remove_type(CELL_TYPES.ROBOT)
+
+        if self.dropoff_point != self.position:
+            # this because when we arrive at the dropoff point, we dont want the a_star algorithm to get stuck in the dropoff point
+            self.map.get_cell(next_pos.x, next_pos.y).add_type(CELL_TYPES.ROBOT)
 
     def add_order(self, order):
         """

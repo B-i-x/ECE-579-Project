@@ -171,7 +171,7 @@ class Robot:
                     f_score           = tentative_g + h(nbr, goal)
                     heapq.heappush(open_heap, (f_score, next(counter), nbr))
 
-        # print(f"Robot {self.id} failed to find a path from {start} to {goal}.")
+        print(f"Robot {self.id} failed to find a path from {start} to {goal}.")
         # no path found
         self.next_direction_to_move = None
         return []
@@ -242,11 +242,14 @@ class Robot:
                     continue
                 if not cell.has_type(CELL_TYPES.WALKWAY):
                     continue
+                if cell.has_type(CELL_TYPES.ROBOT):
+                    continue
 
                 if nbr not in came_from:
                     came_from[nbr] = current
                     heapq.heappush(open_heap, (h(nbr, goal), next(counter), nbr))
 
+        print(f"Robot {self.id} failed to find a path from {start} to {goal}.")
         self.next_direction_to_move = None
         return []
 
@@ -311,11 +314,14 @@ class Robot:
                     continue
                 if not cell.has_type(CELL_TYPES.WALKWAY):
                     continue
-
+                if cell.has_type(CELL_TYPES.ROBOT):
+                    continue
+                
                 if nbr not in came_from:
                     came_from[nbr] = current
                     stack.append(nbr)
 
+        print(f"Robot {self.id} failed to find a path from {start} to {goal}.")
         self.next_direction_to_move = None
         return []
         
@@ -388,19 +394,28 @@ class Robot:
         # 2) did we just arrive?
         if self.position == self.dropoff_point:
             if self.state == "delivering":
-                print(f"Robot {self.id} arrived at dropoff point {self.dropoff_point}.")
-                # remove the completed order
-                completed = self.orders.pop(0)
+                # print(f"Robot {self.id} arrived at dropoff point {self.dropoff_point}.")
+                if self.orders:
+                    completed = self.orders.pop(0)
+                    print(f"Robot {self.id} delivered order {completed}.")
 
                 # if there’s another order waiting, go straight to it
                 if self.orders:
                     self._start_next_delivery()
                 else:
-                    # no more orders → return home
-                    self.state = "returning"
-                    path = self.find_path(self.dropoff_point, self.restaurant_pickup_point)
-                    self.returned_path = [cell.position for cell in path][1:]  # drop the start
-                    self.dropoff_point = self.restaurant_pickup_point
+                    # no more orders → try to plan a path home
+                    path = self.find_path(self.dropoff_point,self.restaurant_pickup_point)
+
+                    if path:
+                        # only flip to "returning" when we actually have a path
+                        self.state = "returning"
+                        # record the steps (dropping the start)
+                        self.returned_path = [c.position for c in path][1:]
+                        # new goal is restaurant
+                        self.dropoff_point = self.restaurant_pickup_point
+                    else:
+                        # failed to find a return path; will retry next tick
+                        print(f"Robot {self.id} cannot find path home yet; retrying next tick.")
 
 
             elif self.state == "returning":

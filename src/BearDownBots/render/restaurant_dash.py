@@ -24,6 +24,14 @@ class RestaurantDashboardRenderer:
 
         self.robot_label = []
 
+        self._shown = {
+            OrderStatus.PLACED:    {},   # order_id -> Label
+            OrderStatus.PREPARING: {},
+            OrderStatus.READY:     {},
+            "DELIVERING_HDR": {},        # robot_id -> header Label
+            "DELIVERING_ORD": {}         # (robot_id, order_id) -> Label
+        }
+
     # ------------------------------------------------------------
     # one-off wiring helpers
     # ------------------------------------------------------------
@@ -113,46 +121,77 @@ class RestaurantDashboardRenderer:
         if self.scheduler is None:
             return
 
-        # clear every tab
-        for tab in (
-            self.tab_new, self.tab_prep, self.tab_ready, self.tab_delivering
-        ):
-            for widget in tab.winfo_children():
-                widget.destroy()
-
-        # --- tickets not yet on robots ---------------------------
-        bucket = {
-            OrderStatus.PLACED:    self.tab_new,
-            OrderStatus.PREPARING: self.tab_prep,
-            OrderStatus.READY:     self.tab_ready,
+        # 1) Build the desired buckets of order_ids
+        desired = {
+            OrderStatus.PLACED:    set(),
+            OrderStatus.PREPARING: set(),
+            OrderStatus.READY:     set(),
         }
-
         for building, order in self.scheduler.orders:
-            # skip OUT_FOR_DELIVERY here – they’re handled in the next loop
-            if order.status not in bucket:
-                continue
+            if order.status in desired:
+                desired[order.status].add(id(order))
 
-            parent = bucket[order.status]
-            self._add_label(parent, f"{building.name} → {order}")
+        # 2) Diff & update each non‐delivering tab
+        for status, tab in ((OrderStatus.PLACED, self.tab_new),
+                            (OrderStatus.PREPARING, self.tab_prep),
+                            (OrderStatus.READY, self.tab_ready)):
+            shown = self._shown[status]
+            # remove labels no longer desired
+            for oid in list(shown):
+                if oid not in desired[status]:
+                    shown[oid].destroy()
+                    del shown[oid]
+            # add any new orders
+            for building, order in self.scheduler.orders:
+                oid = id(order)
+                if order.status == status and oid not in shown:
+                    lbl = self._add_label(tab, f"{building.name} → {order}")
+                    shown[oid] = lbl
 
-        # --- tickets already loaded ------------------------------
+        # 3) Delivering tab: handle headers and order items per robot
+        # Track which robot‐headers and which (robot,order) pairs we now need
+        desired_hdr = set()
+        desired_ord = set()
         for robot in self.robots:
             if not robot.orders:
                 continue
+            desired_hdr.add(robot.id)
+            for order in robot.orders:
+                desired_ord.add( (robot.id, id(order)) )
 
-            hdr = tk.Label(
-                self.tab_delivering,
-                text=f"{robot} ({len(robot.orders)})",
-                bg="lightgrey",
-                font=("Arial", 11, "bold")
-            )
-            hdr.pack(anchor='w', padx=4, pady=(4, 1))
-
-            for ord in robot.orders:
-                self._add_label(
+        # remove old headers
+        for rid, hdr_lbl in list(self._shown["DELIVERING_HDR"].items()):
+            if rid not in desired_hdr:
+                hdr_lbl.destroy()
+                del self._shown["DELIVERING_HDR"][rid]
+        # add new headers
+        for robot in self.robots:
+            if robot.orders and robot.id not in self._shown["DELIVERING_HDR"]:
+                hdr = tk.Label(
                     self.tab_delivering,
-                    f"→ {ord.building.name} : {ord}"
+                    text=f"{robot} ({len(robot.orders)})",
+                    bg="lightgrey", font=("Arial", 11, "bold")
                 )
+                hdr.pack(anchor='w', padx=4, pady=(4,1))
+                self._shown["DELIVERING_HDR"][robot.id] = hdr
+
+        # remove old order‐labels
+        for key, lbl in list(self._shown["DELIVERING_ORD"].items()):
+            if key not in desired_ord:
+                lbl.destroy()
+                del self._shown["DELIVERING_ORD"][key]
+        # add new order‐labels
+        for robot in self.robots:
+            if not robot.orders:
+                continue
+            for order in robot.orders:
+                key = (robot.id, id(order))
+                if key not in self._shown["DELIVERING_ORD"]:
+                    lbl = self._add_label(
+                        self.tab_delivering, f"→ {order.building.name} : {order}"
+                    )
+                    self._shown["DELIVERING_ORD"][key] = lbl
+
 
     def update(self):
         self.update_robot_labels()
@@ -162,7 +201,7 @@ class RestaurantDashboardRenderer:
     # helpers
     # ------------------------------------------------------------
     def _add_label(self, parent, text):
-        tk.Label(
+        lbl = tk.Label(
             parent,
             text=text,
             bg="white",
@@ -170,7 +209,11 @@ class RestaurantDashboardRenderer:
             anchor="w",
             justify="left",
             wraplength=220
-        ).pack(fill='x', padx=12, pady=1)
+        )
+        lbl.pack(fill='x', padx=12, pady=1)
+
+        return lbl
+
 
     def _on_inner_resize(self, event):
         """Auto-adjust wrap-length when a tab’s frame is resized."""

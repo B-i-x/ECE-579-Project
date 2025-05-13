@@ -18,5 +18,5 @@ def fast():
     Config.Environment.MAP_ROWS = 500
     Config.Environment.MAP_COLS = 500
 
-main()
+    main()
 

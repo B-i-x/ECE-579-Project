@@ -25,6 +25,8 @@ class BearDownBotsApp():
         self.base_fps   = Config.Simulation.UPDATES_PER_SEC
         self.time_scale = Config.Simulation.TIME_SCALE
 
+        self.renderer = GuiWrapper()
+        self.progress_window = ProgressWindow(self.renderer)
         # 1) common setup
         self.setup()
 
@@ -33,8 +35,6 @@ class BearDownBotsApp():
             self.run_cli()
         else:
             # -- GUI mode wiring --
-            self.renderer = GuiWrapper()
-            self.progress_window = ProgressWindow(self.renderer)
             self.renderer.add_objects_to_render(
                 campus_map=self.environment,
                 robots=self.robots,

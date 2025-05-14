@@ -38,6 +38,7 @@ class Robot:
         self.orders : list[Order] = []  # List of orders assigned to the robot
 
         self.state = "idle"   # one of: "delivering", "returning", "idle"
+        self._replan_failures = 0
 
         self.place_self_on_restaurant()
 
@@ -242,8 +243,6 @@ class Robot:
                     continue
                 if not cell.has_type(CELL_TYPES.WALKWAY):
                     continue
-                if cell.has_type(CELL_TYPES.ROBOT):
-                    continue
 
                 if nbr not in came_from:
                     came_from[nbr] = current
@@ -313,8 +312,6 @@ class Robot:
                 if cell.has_type(CELL_TYPES.OBSTACLE):
                     continue
                 if not cell.has_type(CELL_TYPES.WALKWAY):
-                    continue
-                if cell.has_type(CELL_TYPES.ROBOT):
                     continue
                 
                 if nbr not in came_from:
@@ -389,6 +386,35 @@ class Robot:
         """
         Perform the robot's action.
         """
+         # only try to re‐plan if we're in motion and have no path
+        if self.state in ("delivering", "returning") \
+        and not self.returned_path \
+        and self.position != self.dropoff_point:
+
+            path = self.find_path(self.position, self.dropoff_point)
+
+            if not path:
+                self._replan_failures += 1
+
+                if self._replan_failures >= 25:
+                    # abort current order if we were delivering
+                    if self.state == "delivering" and self.orders:
+                        aborted = self.orders.pop(0)
+                        print(f"Robot {self.id} aborted order {aborted} after 100 failed replans.")
+                    # reset and go idle
+                    self._replan_failures = 0
+                    self.state = "idle"
+                    self.dropoff_point = None
+                    return
+                else:
+                    print(f"Robot {self.id} replan attempt {self._replan_failures}/100 failed; retrying next tick.")
+                    return
+
+            # success → reset counter and load the new path
+            self._replan_failures = 0
+            self.returned_path = [c.position for c in path][1:]
+            print(f"Robot {self.id} replanned path to {self.dropoff_point}.")
+
 
         self.move()
         # 2) did we just arrive?

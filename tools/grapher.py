@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import re
 import sys
+import csv
 import argparse
 from datetime import datetime, timedelta
 
@@ -83,7 +84,6 @@ def plot_throughput(xs, ys, logfile_path, bin_width_seconds=1):
     plt.show()
 
 
-
 def main():
     parser = argparse.ArgumentParser(
         description="Plot order throughput from a log file."
@@ -93,7 +93,7 @@ def main():
         "--bin", "-b",
         type=int,
         default=5,
-        help="bin width in seconds (default: 1s)"
+        help="bin width in seconds (default: 5s)"
     )
     args = parser.parse_args()
 
@@ -123,8 +123,19 @@ def main():
           f"({ops_per_min:.1f} orders/min)")
     print("===============================")
 
-    # now build & plot your time-binned throughput
+    # build the time‐binned throughput
     xs, ys = build_throughput_timeseries(deliveries, bin_width_seconds=args.bin)
+
+    # write CSV alongside the PNG
+    csv_path = args.logfile + f"_throughput_{args.bin}s.csv"
+    with open(csv_path, "w", newline="") as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(["timestamp", f"orders_per_{args.bin}s"])
+        for t, count in zip(xs, ys):
+            writer.writerow([t.strftime("%Y-%m-%d %H:%M:%S"), count])
+    print(f"Wrote throughput data to {csv_path}")
+
+    # plot
     plot_throughput(xs, ys, args.logfile, bin_width_seconds=args.bin)
 
 
